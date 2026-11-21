@@ -1,0 +1,13 @@
+hasil: failure
+commit: 38030fe0053a4e8644451160e54ed74c0741caa7
+branch: ai-fitur
+waktu: 2026-11-21T05:23:40Z
+
+e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ai/AiActionExecutor.kt:184:20 Unresolved reference 'batchEdit' on receiver of type 'EditorState'.
+* What went wrong:
+Execution failed for task ':app:compileCompat32DebugKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Kotlin compiler: UNRESOLVED_REFERENCE
+--
+BUILD FAILED in 1m 29s
+7 actionable tasks: 7 executed
