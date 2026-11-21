@@ -1,0 +1,77 @@
+name: compile-check
+
+on:
+  push:
+    branches: [ai-fitur]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container: debian:trixie
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_NDK: /opt/android-sdk/ndk/30.0.16248370
+    steps:
+      - name: Install packages
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates curl unzip xz-utils python3 build-essential clang lld ninja-build openjdk-21-jdk-headless
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install the Android SDK
+        run: |
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          curl -fsSL -o /tmp/cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          echo '2d2d50857e4eb553af5a6dc3ad507a17adf43d115264b1afc116f95c92e5e258  /tmp/cmdline-tools.zip' | sha256sum -c -
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+          mv /tmp/cmdline-tools/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "cmake;3.31.6" "ndk;30.0.16248370"
+      - name: Set Java for Gradle
+        run: echo 'org.gradle.java.home=/usr/lib/jvm/java-21-openjdk-amd64' >> gradle.properties
+      - name: Compile Kotlin (compat32)
+        id: compile
+        continue-on-error: true
+        shell: bash
+        run: ./gradlew :app:compileCompat32DebugKotlin --no-daemon --console=plain 2>&1 | tee /tmp/compile.log
+      - name: Push log to ci-logs
+        if: always()
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESULT: ${{ steps.compile.outcome }}
+        run: |
+          set -e
+          touch /tmp/compile.log
+          mkdir -p /tmp/logs
+          cd /tmp/logs
+          git init -q
+          git config user.name "compile-check"
+          git config user.email "compile-check@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q origin ci-logs; then
+            git checkout -q -B ci-logs FETCH_HEAD
+          else
+            git checkout -q --orphan ci-logs
+          fi
+          {
+            echo "hasil: ${RESULT}"
+            echo "commit: ${GITHUB_SHA}"
+            echo "branch: ${GITHUB_REF_NAME}"
+            echo "waktu: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            grep -E '^(e|w): ' /tmp/compile.log || true
+            grep -E 'BUILD (SUCCESSFUL|FAILED)|What went wrong' -A3 /tmp/compile.log || true
+          } > ringkasan.txt
+          tail -n 1500 /tmp/compile.log > log-penuh.txt
+          git add ringkasan.txt log-penuh.txt
+          git commit -q -m "log compile-check ${GITHUB_SHA::7} (${RESULT})"
+          git push -q origin HEAD:ci-logs
+      - name: Tandai gagal jika compile gagal
+        if: steps.compile.outcome == 'failure'
+        run: exit 1
