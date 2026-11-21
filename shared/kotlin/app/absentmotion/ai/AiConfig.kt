@@ -46,6 +46,24 @@ object AiConfig {
         prefs(context).edit().putString("models", list.joinToString("\n")).apply()
     }
 
+    val thinkingChoices: List<Pair<String, String>> = listOf(
+        "" to "Otomatis",
+        "LOW" to "Rendah",
+        "MEDIUM" to "Sedang",
+        "HIGH" to "Tinggi",
+    )
+
+    fun thinking(context: Context): String {
+        val prefs = prefs(context)
+        return if (prefs.contains("thinking")) prefs.getString("thinking", "").orEmpty() else "MEDIUM"
+    }
+
+    fun setThinking(context: Context, level: String) {
+        prefs(context).edit().putString("thinking", level).apply()
+    }
+
+    fun thinkingLabel(level: String): String = thinkingChoices.firstOrNull { it.first == level }?.second ?: "Otomatis"
+
     fun cleanModel(model: String): String =
         model.trim().removePrefix("models/").filter { it.isLetterOrDigit() || it == '-' || it == '.' || it == '_' }
 }
