@@ -1,14 +1,8 @@
-hasil: failure
-commit: cc763780535a12307fcaba0cb965dbce15249c81
+hasil: success
+commit: 29ceb64444a1c8d6b537ddaaaa4a195b1fed1020
 branch: ai-fitur
-waktu: 2026-11-21T23:20:26Z
+waktu: 2026-11-21T23:21:50Z
 
-e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:111:51 No value passed for parameter 'request'.
-e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:111:51 No value passed for parameter 'onProgress'.
-* What went wrong:
-Execution failed for task ':app:compileCompat32DebugKotlin' (registered by plugin 'com.android.internal.application').
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
-   > Kotlin compiler: NO_VALUE_FOR_PARAMETER
---
-BUILD FAILED in 2m 48s
+BUILD SUCCESSFUL in 2m 22s
 7 actionable tasks: 7 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.2/userguide/configuration_cache_enabling.html
