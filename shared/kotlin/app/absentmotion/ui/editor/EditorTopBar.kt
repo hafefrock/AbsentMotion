@@ -137,6 +137,7 @@ fun EditorTopBar(state: EditorState, onExit: () -> Unit, modifier: Modifier = Mo
                 }
             }
         }
+        if (place != BarPlace.Layer) AiBarButton(state, cell.enterFade())
         if (layer == null) {
             BarButton(ChromeIcons.Gear, stringResource(R.string.topbar_project_settings), cell.enterFade().tutorialTarget("gear")) { act { settingsOpen = true } }
             val exportPress = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }

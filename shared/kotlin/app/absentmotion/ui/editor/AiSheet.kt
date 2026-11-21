@@ -1,17 +1,12 @@
 package app.absentmotion.ui.editor
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
@@ -26,31 +21,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.absentmotion.ai.AiConfig
 import app.absentmotion.ai.AiGemini
 import app.absentmotion.editor.EditorState
 import app.absentmotion.ui.theme.Am
 import kotlinx.coroutines.launch
 
-private const val AI_PREFS = "ai_gemini"
-private const val AI_KEY = "api_key"
-
 @Composable
-internal fun AiAssistantOverlay(state: EditorState) {
+internal fun AiBarButton(state: EditorState, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd) {
-        Box(
-            Modifier.padding(end = 4.dp).size(38.dp).clip(CircleShape).background(Am.Accent).clickable { open = true },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("AI", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-        }
+    Box(modifier.clickable { open = true }, contentAlignment = Alignment.Center) {
+        Text("AI", color = Am.Accent, fontSize = 15.sp, fontWeight = FontWeight.Bold)
     }
     if (open) AiAssistantDialog(state) { open = false }
 }
@@ -58,9 +43,8 @@ internal fun AiAssistantOverlay(state: EditorState) {
 @Composable
 private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences(AI_PREFS, android.content.Context.MODE_PRIVATE) }
-    var key by remember { mutableStateOf(prefs.getString(AI_KEY, "").orEmpty()) }
-    var editingKey by remember { mutableStateOf(key.isBlank()) }
+    val key = remember { AiConfig.apiKey(context) }
+    val model = remember { AiConfig.model(context) }
     var request by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
@@ -83,19 +67,15 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
         title = { Text("Asisten AI", color = Am.OnDark) },
         text = {
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                if (editingKey) {
-                    Text("Tempel API key Gemini (dari Google AI Studio). Kunci disimpan hanya di HP ini.", color = Am.OnDark, fontSize = 14.sp)
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = key,
-                        onValueChange = { key = it.trim() },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        label = { Text("API key") },
-                        colors = fieldColors,
-                        modifier = Modifier.fillMaxWidth(),
+                if (key.isBlank()) {
+                    Text(
+                        "API key Gemini belum diisi. Buka Pengaturan di layar daftar proyek, lalu isi \"AI: API key Gemini\".",
+                        color = Am.OnDark,
+                        fontSize = 14.sp,
                     )
                 } else {
+                    Text("Model: $model", color = Am.OnDark.copy(alpha = 0.7f), fontSize = 12.sp)
+                    Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = request,
                         onValueChange = { request = it },
@@ -114,20 +94,11 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                     }
                     for (line in applied) Text("✓ $line", color = Am.OnDark, fontSize = 13.sp)
                     for ((name, reason) in skipped) Text("✗ $name: $reason", color = Am.OnDark.copy(alpha = 0.7f), fontSize = 13.sp)
-                    TextButton({ editingKey = true }) { Text("Ubah API key", color = Am.Accent, fontSize = 12.sp) }
                 }
             }
         },
         confirmButton = {
-            if (editingKey) {
-                TextButton(
-                    onClick = {
-                        prefs.edit().putString(AI_KEY, key).apply()
-                        editingKey = false
-                    },
-                    enabled = key.isNotBlank(),
-                ) { Text("Simpan", color = Am.Accent) }
-            } else {
+            if (key.isNotBlank()) {
                 TextButton(
                     onClick = {
                         val text = request.trim()
@@ -137,7 +108,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                         applied = emptyList()
                         skipped = emptyList()
                         scope.launch {
-                            val result = AiGemini.run(state, key, text)
+                            val result = AiGemini.run(state, key, model, text)
                             busy = false
                             message = result.galat ?: result.pesan
                             val outcome = result.hasil

@@ -162,7 +162,6 @@ private fun EditorBody(state: EditorState, onExit: () -> Unit) {
         SlideOver(state.effectBrowserOpen) { PhoneScreen(fillWidth = if (!deskLayout && app.absentmotion.ui.adaptive.adaptiveWindowIsWide()) 0.dp else if (wide && LocalConfiguration.current.screenWidthDp >= 900) Dp.Infinity else 720.dp) { app.absentmotion.ui.editor.effects.EffectBrowser(state) } }
         SlideOver(state.presetsOpen) { PhoneScreen { PresetScreen(state) } }
         SlideOver(state.toolOpen != 0) { PhoneScreen(fillWidth = 720.dp) { EditorTools(state, LocalEditorScope.current) } }
-        AiAssistantOverlay(state)
     }
 }
 
