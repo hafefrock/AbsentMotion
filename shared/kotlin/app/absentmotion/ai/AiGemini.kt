@@ -13,10 +13,9 @@ class AiAssistantResult(val pesan: String, val hasil: AiResult?, val galat: Stri
 
 object AiGemini {
 
-    private val models = listOf("gemini-3.5-flash", "gemini-2.5-flash")
     private const val MAX_LAYERS = 200
 
-    private class GeminiException(message: String, val modelTidakAda: Boolean = false) : Exception(message)
+    private class GeminiException(message: String) : Exception(message)
 
     fun projectState(editor: EditorState): String {
         val scene = editor.scene
@@ -54,10 +53,10 @@ object AiGemini {
         else -> kind
     }
 
-    suspend fun run(editor: EditorState, apiKey: String, request: String): AiAssistantResult {
+    suspend fun run(editor: EditorState, apiKey: String, model: String, request: String): AiAssistantResult {
         val userText = "KEADAAN PROYEK:\n" + projectState(editor) + "\n\nPERMINTAAN PENGGUNA:\n" + request
         val raw = try {
-            withContext(Dispatchers.IO) { generate(apiKey, userText) }
+            withContext(Dispatchers.IO) { callModel(model, apiKey, userText) }
         } catch (e: GeminiException) {
             return AiAssistantResult("", null, e.message ?: "Gemini gagal menjawab")
         } catch (e: IOException) {
@@ -75,19 +74,6 @@ object AiGemini {
         val text = raw.trim()
         if (!text.startsWith("```")) return text
         return text.removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
-    }
-
-    private fun generate(apiKey: String, userText: String): String {
-        var lastError: GeminiException? = null
-        for (model in models) {
-            try {
-                return callModel(model, apiKey, userText)
-            } catch (e: GeminiException) {
-                if (!e.modelTidakAda) throw e
-                lastError = e
-            }
-        }
-        throw lastError ?: GeminiException("Tidak ada model Gemini yang bisa dipakai")
     }
 
     private fun callModel(model: String, apiKey: String, userText: String): String {
@@ -127,11 +113,11 @@ object AiGemini {
         }
         val message = when (code) {
             400, 403 -> if (detail.contains("API key", ignoreCase = true)) "API key Gemini tidak valid. Periksa kembali kuncinya." else "Permintaan ditolak ($code): $detail"
-            404 -> "Model Gemini tidak ditemukan: $detail"
+            404 -> "Model Gemini tidak ditemukan. Pilih model lain di Pengaturan. $detail"
             429 -> "Kuota Gemini habis atau terlalu sering dipakai. Coba lagi sebentar lagi."
             else -> "Gemini error $code: $detail"
         }
-        return GeminiException(message, modelTidakAda = code == 404)
+        return GeminiException(message)
     }
 
     private fun extractText(body: String): String {
