@@ -143,6 +143,7 @@ fun SettingsDrawer(settings: AppSettings, drawer: androidx.compose.material3.Dra
             Category(R.string.settings_group_backup, ChromeIcons.SavePreset) {
                 BackupRows(settings, onRestored)
             }
+            AiSettingsRows()
             LinkRow(stringResource(R.string.settings_language), currentLanguage(LocalContext.current).nativeName) { language = true }
             Spacer(Modifier.height(CardGap))
             LinkRow(stringResource(R.string.settings_help)) { help = true }
