@@ -398,6 +398,29 @@ class EditorState(
         if (!lookOnly) engine.setScene(scene)
     }
 
+    private var batchKey: Any? = null
+
+    fun batchEdit(block: () -> Unit) {
+        if (batchKey != null) {
+            block()
+            return
+        }
+        val startNode = root.node
+        batchKey = Any()
+        try {
+            block()
+        } finally {
+            batchKey = null
+            history.endGesture()
+            if (root.node !== startNode) {
+                val now = root
+                val xml = lazy { now.toXml() }
+                show(now, xml)
+                saver.commit(xml)
+            }
+        }
+    }
+
     fun edit(key: Any? = null, pivot: Long? = null, change: (Scene) -> Scene) {
         Glide.interrupt()
         val previous = liveRecording
@@ -422,7 +445,7 @@ class EditorState(
             edit(key, pivot, change)
             return
         }
-        history.edit(key, root.withFocused(groupPath, changed))
+        history.edit(batchKey ?: key, root.withFocused(groupPath, changed))
     }
 
     var typing: (() -> Unit)? = null
@@ -555,6 +578,7 @@ class EditorState(
         }
         val kept = if (groupPath.size < oldPath.size) frameAfterLeaving(oldRoot, oldPath, previous, now, frame) else keptFrame(previous, now, frame)
         if (kept != frame) frame = kept
+        if (batchKey != null) return
         if (!save) {
             if (drafted == null) Choreographer.getInstance().postFrameCallback(sendDraft)
             drafted = next
