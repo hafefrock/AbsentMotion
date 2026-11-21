@@ -45,6 +45,8 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
     val context = LocalContext.current
     val key = remember { AiConfig.apiKey(context) }
     val model = remember { AiConfig.model(context) }
+    val thinking = remember { AiConfig.thinking(context) }
+    var progress by remember { mutableStateOf("") }
     var request by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
@@ -74,7 +76,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                         fontSize = 14.sp,
                     )
                 } else {
-                    Text("Model: $model", color = Am.OnDark.copy(alpha = 0.7f), fontSize = 12.sp)
+                    Text("Model: $model  •  Berpikir: ${AiConfig.thinkingLabel(thinking)}", color = Am.OnDark.copy(alpha = 0.7f), fontSize = 12.sp)
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = request,
@@ -86,7 +88,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                     )
                     if (busy) {
                         Spacer(Modifier.height(8.dp))
-                        Text("Memproses...", color = Am.Accent, fontSize = 14.sp)
+                        Text(progress.ifBlank { "Memproses..." }, color = Am.Accent, fontSize = 14.sp)
                     }
                     if (message.isNotBlank()) {
                         Spacer(Modifier.height(12.dp))
@@ -108,7 +110,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                         applied = emptyList()
                         skipped = emptyList()
                         scope.launch {
-                            val result = AiGemini.run(state, key, model, text)
+                            val result = AiGemini.run(state, key, model, thinking, text) { progress = it }
                             busy = false
                             message = result.galat ?: result.pesan
                             val outcome = result.hasil
