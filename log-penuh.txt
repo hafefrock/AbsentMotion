@@ -38,8 +38,27 @@ Installing Android SDK Build-Tools 36 in /opt/android-sdk/build-tools/36.0.0
 > Task :app:parseCompat32DebugLocalResources
 > Task :app:generateCompat32DebugRFile
 > Task :app:compileCompat32DebugKotlin
+e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:140:51 No value passed for parameter 'request'.
+
+> Task :app:compileCompat32DebugKotlin FAILED
 
 [Incubating] Problems report is available at: file:///__w/AbsentMotion/AbsentMotion/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileCompat32DebugKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Kotlin compiler: NO_VALUE_FOR_PARAMETER
+       Kotlin compiler error
+         No value passed for parameter 'request'.
+         Location: /__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:140
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
 
 Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
 
@@ -47,6 +66,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD SUCCESSFUL in 3m 8s
+BUILD FAILED in 2m 6s
 7 actionable tasks: 7 executed
-Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.2/userguide/configuration_cache_enabling.html
