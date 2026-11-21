@@ -135,6 +135,17 @@ object AiGemini {
         return null
     }
 
+    suspend fun test(apiKey: String, model: String): String {
+        return try {
+            withContext(Dispatchers.IO) { callModel(model, apiKey, "Tes koneksi. Balas dengan pesan singkat dan aksi kosong.") }
+            "✓ Terhubung ke $model"
+        } catch (e: GeminiException) {
+            "✗ " + (e.message ?: "Gemini gagal menjawab")
+        } catch (e: IOException) {
+            "✗ Tidak bisa menghubungi Gemini: " + (e.message ?: "periksa koneksi internet")
+        }
+    }
+
     private fun cleanJson(raw: String): String {
         val text = raw.trim()
         if (!text.startsWith("```")) return text
