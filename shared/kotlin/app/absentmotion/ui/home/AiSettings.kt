@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +30,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.absentmotion.ai.AiConfig
+import app.absentmotion.ai.AiGemini
 import app.absentmotion.ui.theme.Am
+import kotlinx.coroutines.launch
 
 @Composable
 private fun aiFieldColors() = OutlinedTextFieldDefaults.colors(
@@ -45,15 +48,35 @@ private fun aiFieldColors() = OutlinedTextFieldDefaults.colors(
 @Composable
 internal fun AiSettingsRows() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var apiKey by remember { mutableStateOf(AiConfig.apiKey(context)) }
     var model by remember { mutableStateOf(AiConfig.model(context)) }
     var keyDialog by remember { mutableStateOf(false) }
     var modelDialog by remember { mutableStateOf(false) }
+    var testing by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf("") }
 
-    LinkRow("AI: API key Gemini", if (apiKey.isBlank()) "Belum diisi" else "Tersimpan") { keyDialog = true }
-    Spacer(Modifier.height(CardGap))
-    LinkRow("AI: model", model) { modelDialog = true }
-    Spacer(Modifier.height(CardGap))
+    ActionRow("API key Gemini", if (apiKey.isBlank()) "Belum diisi" else "••••" + apiKey.takeLast(4)) { keyDialog = true }
+    Divider(10.dp)
+    ActionRow("Model", model) { modelDialog = true }
+    Divider(10.dp)
+    ActionRow("Tes koneksi", chevron = false, busy = testing) {
+        if (!testing) {
+            if (apiKey.isBlank()) {
+                testResult = "Isi API key dulu."
+            } else {
+                testing = true
+                testResult = ""
+                scope.launch {
+                    testResult = AiGemini.test(apiKey, model)
+                    testing = false
+                }
+            }
+        }
+    }
+    if (testResult.isNotBlank()) {
+        Text(testResult, Modifier.padding(horizontal = 15.dp, vertical = 4.dp), color = Am.HomeMid, fontSize = 12.sp, lineHeight = 16.sp)
+    }
 
     if (keyDialog) {
         var text by remember { mutableStateOf("") }
@@ -73,6 +96,11 @@ internal fun AiSettingsRows() {
                         colors = aiFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    TextButton({
+                        val clip = (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager).primaryClip
+                        val pasted = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString().orEmpty().trim()
+                        if (pasted.isNotEmpty()) text = pasted
+                    }) { Text("Tempel dari clipboard", color = Am.Navy, fontSize = 13.sp) }
                 }
             },
             confirmButton = {

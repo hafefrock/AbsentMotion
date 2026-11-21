@@ -140,10 +140,10 @@ fun SettingsDrawer(settings: AppSettings, drawer: androidx.compose.material3.Dra
             Category(R.string.settings_group_editor, HomeIcons.Pencil) { androidx.compose.runtime.key(drawer.targetValue) { EditorSettings(settings) } }
             Category(R.string.settings_group_playback, HomeIcons.ProjectsTabOff) { PlaybackSettings(settings) }
             Category(R.string.settings_group_projects, HomeIcons.Folder) { androidx.compose.runtime.key(drawer.targetValue) { ProjectsSettings(settings) { demoNote = it } } }
+            Category("Asisten AI", app.absentmotion.ui.editor.PanelIcons.Effects) { AiSettingsRows() }
             Category(R.string.settings_group_backup, ChromeIcons.SavePreset) {
                 BackupRows(settings, onRestored)
             }
-            AiSettingsRows()
             LinkRow(stringResource(R.string.settings_language), currentLanguage(LocalContext.current).nativeName) { language = true }
             Spacer(Modifier.height(CardGap))
             LinkRow(stringResource(R.string.settings_help)) { help = true }
@@ -250,6 +250,11 @@ internal fun ProjectsSettings(settings: AppSettings, onDemoMode: (Boolean) -> Un
 
 @Composable
 private fun Category(@StringRes name: Int, icon: ImageVector, content: @Composable () -> Unit) {
+    Category(stringResource(name), icon, content)
+}
+
+@Composable
+private fun Category(name: String, icon: ImageVector, content: @Composable () -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
     val turn by animateFloatAsState(if (open) 180f else 0f, Motion.enter())
     Column(Modifier.padding(horizontal = 6.dp).fillMaxWidth().clip(PanelShape).background(PanelColor)) {
@@ -261,7 +266,7 @@ private fun Category(@StringRes name: Int, icon: ImageVector, content: @Composab
         ) {
             Icon(icon, null, Modifier.size(20.dp), tint = Am.HomeInk)
             Spacer(Modifier.width(10.dp))
-            Text(stringResource(name), Modifier.weight(1f), color = Am.HomeInk, fontSize = 13.sp)
+            Text(name, Modifier.weight(1f), color = Am.HomeInk, fontSize = 13.sp)
             Icon(HomeIcons.ChevronDown, null, Modifier.size(24.dp).rotate(turn), tint = Am.HomeMid)
         }
         AnimatedVisibility(
