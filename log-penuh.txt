@@ -14,39 +14,26 @@ For more details see https://docs.gradle.org/9.8.2/release-notes.html
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
-> Configure project :app
-WARNING: [CXX5202] This app only has 32-bit [armeabi-v7a] native libraries. Beginning August 1, 2019 Google Play store requires that all apps that include native libraries must provide 64-bit versions. For more information, visit https://g.co/64-bit-requirement
-Add android.sync.suppressAgpWarnings=EXTERNAL_NATIVE_BUILD_CONFIGURATION to the gradle.properties file to suppress this warning.
-[CXX5202] This app only has 32-bit [armeabi-v7a] native libraries. Beginning August 1, 2019 Google Play store requires that all apps that include native libraries must provide 64-bit versions. For more information, visit https://g.co/64-bit-requirement
-WARNING: [CXX5202] This app only has 32-bit [armeabi-v7a] native libraries. Beginning August 1, 2019 Google Play store requires that all apps that include native libraries must provide 64-bit versions. For more information, visit https://g.co/64-bit-requirement
-Add android.sync.suppressAgpWarnings=EXTERNAL_NATIVE_BUILD_CONFIGURATION to the gradle.properties file to suppress this warning.
-[CXX5202] This app only has 32-bit [armeabi-v7a] native libraries. Beginning August 1, 2019 Google Play store requires that all apps that include native libraries must provide 64-bit versions. For more information, visit https://g.co/64-bit-requirement
-Checking the license for package Android SDK Build-Tools 36 in /opt/android-sdk/licenses
-License for package Android SDK Build-Tools 36 accepted.
-Preparing "Install Android SDK Build-Tools 36 v.36.0.0".
-"Install Android SDK Build-Tools 36 v.36.0.0" ready.
-Installing Android SDK Build-Tools 36 in /opt/android-sdk/build-tools/36.0.0
-"Install Android SDK Build-Tools 36 v.36.0.0" complete.
-"Install Android SDK Build-Tools 36 v.36.0.0" finished.
-[=========                              ] 25%                                   
-> Task :app:preBuild UP-TO-DATE
-> Task :app:preCompat32DebugBuild UP-TO-DATE
-> Task :app:generateCompat32DebugBuildConfig
-> Task :app:generateCompat32DebugResources
-> Task :app:packageCompat32DebugResources
-> Task :app:processCompat32DebugNavigationResources
-> Task :app:parseCompat32DebugLocalResources
-> Task :app:generateCompat32DebugRFile
-> Task :app:compileCompat32DebugKotlin
+FAILURE: Build failed with an exception.
 
-[Incubating] Problems report is available at: file:///__w/AbsentMotion/AbsentMotion/build/reports/problems/problems-report.html
+* Where:
+Build file '/__w/AbsentMotion/AbsentMotion/build.gradle.kts' line: 4
 
-Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+* What went wrong:
+Plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.4.21', apply: false] was not found in any of the following sources:
 
-You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+- Gradle Core Plugins (plugin is not in 'org.gradle' namespace)
+- Included Builds (No included builds contain this plugin)
+- Plugin Repositories (could not resolve plugin artifact 'org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:2.4.21')
+  Searched in the following repositories:
+    Google
+    MavenRepo
+    Gradle Central Plugin Repository
 
-For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
 
-BUILD SUCCESSFUL in 2m 13s
-7 actionable tasks: 7 executed
-Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.2/userguide/configuration_cache_enabling.html
+BUILD FAILED in 16s
