@@ -51,6 +51,8 @@ internal fun AiSettingsRows() {
     val scope = rememberCoroutineScope()
     var apiKey by remember { mutableStateOf(AiConfig.apiKey(context)) }
     var model by remember { mutableStateOf(AiConfig.model(context)) }
+    var thinking by remember { mutableStateOf(AiConfig.thinking(context)) }
+    var thinkingDialog by remember { mutableStateOf(false) }
     var keyDialog by remember { mutableStateOf(false) }
     var modelDialog by remember { mutableStateOf(false) }
     var testing by remember { mutableStateOf(false) }
@@ -59,6 +61,8 @@ internal fun AiSettingsRows() {
     ActionRow("API key Gemini", if (apiKey.isBlank()) "Belum diisi" else "••••" + apiKey.takeLast(4)) { keyDialog = true }
     Divider(10.dp)
     ActionRow("Model", model) { modelDialog = true }
+    Divider(10.dp)
+    ActionRow("Tingkat berpikir", AiConfig.thinkingLabel(thinking)) { thinkingDialog = true }
     Divider(10.dp)
     ActionRow("Tes koneksi", chevron = false, busy = testing) {
         if (!testing) {
@@ -184,6 +188,42 @@ internal fun AiSettingsRows() {
                 }) { Text("Simpan", color = Am.Navy) }
             },
             dismissButton = { TextButton({ modelDialog = false }) { Text("Tutup", color = Am.Navy) } },
+            containerColor = Am.Card,
+        )
+    }
+
+    if (thinkingDialog) {
+        var choice by remember { mutableStateOf(thinking) }
+        AlertDialog(
+            onDismissRequest = { thinkingDialog = false },
+            title = { Text("Tingkat berpikir", color = Am.Navy) },
+            text = {
+                Column {
+                    Text("Makin tinggi, makin teliti merencanakan, tapi lebih lambat. Tidak semua model mendukung semua tingkat.", color = Am.Navy, fontSize = 13.sp)
+                    Spacer(Modifier.height(8.dp))
+                    for ((level, label) in AiConfig.thinkingChoices) {
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { choice = level },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = choice == level,
+                                onClick = { choice = level },
+                                colors = RadioButtonDefaults.colors(selectedColor = Am.HomeAccent, unselectedColor = Am.Navy),
+                            )
+                            Text(label, color = Am.Navy, fontSize = 14.sp, modifier = Modifier.padding(start = 4.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton({
+                    AiConfig.setThinking(context, choice)
+                    thinking = AiConfig.thinking(context)
+                    thinkingDialog = false
+                }) { Text("Simpan", color = Am.Navy) }
+            },
+            dismissButton = { TextButton({ thinkingDialog = false }) { Text("Tutup", color = Am.Navy) } },
             containerColor = Am.Card,
         )
     }
