@@ -20,6 +20,21 @@ ATURAN UMUM:
   Pakai tanda kutip tunggal ('...') untuk mengutip. Karakter khusus
   lain wajib di-escape agar JSON tetap valid.
 
+FORMAT SETIAP AKSI:
+- Setiap elemen di "aksi" adalah SATU objek JSON datar. Nama aksi ditulis
+  di field "aksi", dan semua parameter ada di objek yang sama (tidak
+  bersarang). Contoh untuk kanvas 1080x1920:
+  {"pesan": "Menambah teks Halo di tengah layar", "aksi": [
+    {"aksi": "tambah_layer", "tipe": "teks", "nama": "Halo", "awal": 0, "durasi": 2000, "isi": "Halo"},
+    {"aksi": "atur_nilai", "id": "baru", "properti": "posisi_x", "nilai": 540},
+    {"aksi": "atur_nilai", "id": "baru", "properti": "posisi_y", "nilai": 960}
+  ]}
+- Layer yang dibuat oleh tambah_layer dalam permintaan yang sama belum
+  punya id di keadaan proyek. Rujuk dengan "id": "baru" (layer terakhir
+  yang dibuat) atau "baru1", "baru2", dst. (urutan pembuatan, mulai dari
+  1). Berlaku juga untuk "induk_id".
+- Titik tengah kanvas = (lebar / 2, tinggi / 2) dari keadaan proyek.
+
 DAFTAR AKSI:
 Layer:
 - tambah_layer {tipe: bentuk|teks|gambar|video|audio|grup|kamera|cahaya, nama, awal, durasi, isi?}

@@ -62,12 +62,77 @@ object AiGemini {
         } catch (e: IOException) {
             return AiAssistantResult("", null, "Tidak bisa menghubungi Gemini: " + (e.message ?: "periksa koneksi internet"))
         }
-        val parsed = AiActionExecutor.parseResponse(cleanJson(raw))
-        if (parsed.aksi.isEmpty()) {
-            return if (parsed.pesan.isBlank()) AiAssistantResult("", null, "Jawaban Gemini tidak bisa dibaca")
-            else AiAssistantResult(parsed.pesan, null)
+        val clean = cleanJson(raw)
+        val root = try {
+            if (clean.startsWith("[")) JSONObject().put("aksi", JSONArray(clean)) else JSONObject(clean)
+        } catch (_: Exception) {
+            return AiAssistantResult("", null, "Jawaban Gemini tidak bisa dibaca")
         }
-        return AiAssistantResult(parsed.pesan, AiActionExecutor.execute(editor, parsed.aksi))
+        val pesan = root.optString("pesan", "")
+        val items = root.optJSONArray("aksi")
+        if (items == null || items.length() == 0) {
+            return if (pesan.isBlank()) AiAssistantResult("", null, "Gemini tidak memberi aksi apa pun") else AiAssistantResult(pesan, null)
+        }
+
+        val applied = ArrayList<String>()
+        val skipped = ArrayList<Pair<String, String>>()
+        val created = ArrayList<Long>()
+        editor.batchEdit {
+            for (i in 0 until items.length()) {
+                val original = items.optJSONObject(i)
+                if (original == null) {
+                    skipped += "aksi[$i]" to "Elemen aksi bukan objek JSON"
+                    continue
+                }
+                val item = normalize(original)
+                val problem = resolveRefs(item, created)
+                if (problem != null) {
+                    skipped += item.optString("aksi", "(kosong)") to problem
+                    continue
+                }
+                val single = JSONObject().put("aksi", JSONArray().put(item)).toString()
+                val result = AiActionExecutor.execute(editor, AiActionExecutor.parseResponse(single).aksi)
+                applied += result.diterapkan
+                skipped += result.dilewati
+                if (item.optString("aksi", "").lowercase() == "tambah_layer" && result.diterapkan.isNotEmpty()) {
+                    editor.selectedId?.let { created += it }
+                }
+            }
+        }
+        return AiAssistantResult(pesan, AiResult(applied, skipped))
+    }
+
+    private fun normalize(item: JSONObject): JSONObject {
+        if (item.optString("aksi", "").isNotBlank()) return item
+        val keys = item.keys().asSequence().toList()
+        if (keys.size == 1) {
+            val inner = item.optJSONObject(keys[0])
+            if (inner != null) {
+                val flat = JSONObject(inner.toString())
+                flat.put("aksi", keys[0])
+                return flat
+            }
+        }
+        for (alt in listOf("action", "nama_aksi", "perintah", "tipe_aksi")) {
+            val value = item.optString(alt, "")
+            if (value.isNotBlank()) {
+                item.put("aksi", value)
+                return item
+            }
+        }
+        return item
+    }
+
+    private fun resolveRefs(item: JSONObject, created: List<Long>): String? {
+        for (key in listOf("id", "induk_id")) {
+            val text = (item.opt(key) as? String)?.trim()?.lowercase() ?: continue
+            if (!text.startsWith("baru")) continue
+            val n = text.removePrefix("baru").toIntOrNull()
+            val id = (if (n == null) created.lastOrNull() else created.getOrNull(n - 1))
+                ?: return "Referensi '$text' tidak ada: belum ada layer baru yang berhasil dibuat"
+            item.put(key, id)
+        }
+        return null
     }
 
     private fun cleanJson(raw: String): String {
