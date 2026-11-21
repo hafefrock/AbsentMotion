@@ -23,6 +23,16 @@ ATURAN UMUM:
   Pakai tanda kutip tunggal ('...') untuk mengutip. Karakter khusus
   lain wajib di-escape agar JSON tetap valid.
 
+NILAI LAYER DI KEADAAN PROYEK:
+- Tiap layer memuat nilainya pada waktu_sekarang: posisi_x, posisi_y,
+  skala (persen), rotasi (derajat), opasitas (persen), warna (hex), ukuran
+  (bentuk) dan efek (id efek yang terpasang).
+- Pakai nilai ini untuk perintah relatif. Contoh: "geser 100 piksel ke
+  kanan" = posisi_x + 100; "perbesar 20%" = skala x 1,2.
+- Percakapan bisa berlanjut: permintaan berikutnya ("lebih besar lagi",
+  "ganti jadi biru") merujuk hasil sebelumnya. Keadaan proyek terbaru
+  dikirim bersama tiap permintaan.
+
 FORMAT SETIAP AKSI:
 - Setiap elemen di "aksi" adalah SATU objek JSON datar. Nama aksi ditulis
   di field "aksi", dan semua parameter ada di objek yang sama (tidak

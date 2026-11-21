@@ -4,20 +4,59 @@ import app.absentmotion.editor.EditorState
 import app.absentmotion.effects.EffectParam
 import app.absentmotion.model.ShapeCatalog
 import app.absentmotion.model.content
+import app.absentmotion.model.effects
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
+import kotlin.math.roundToInt
 
 class AiAssistantResult(val pesan: String, val hasil: AiResult?, val galat: String? = null)
 
+class AiConversation {
+    internal val contents = JSONArray()
+    internal var owner: Any? = null
+
+    fun reset() {
+        while (contents.length() > 0) contents.remove(0)
+        owner = null
+    }
+
+    fun countFor(editor: Any): Int = if (owner === editor) requestCount() else 0
+
+    fun requestCount(): Int {
+        var count = 0
+        for (i in 0 until contents.length()) {
+            val item = contents.optJSONObject(i) ?: continue
+            if (item.optString("role") != "user") continue
+            val text = item.optJSONArray("parts")?.optJSONObject(0)?.optString("text", "").orEmpty()
+            if (text.startsWith("KEADAAN PROYEK:")) count++
+        }
+        return count
+    }
+}
+
 object AiGemini {
+
+    val conversation = AiConversation()
+
+    @Volatile
+    private var activeConnection: HttpURLConnection? = null
+
+    fun cancelActive() {
+        activeConnection?.disconnect()
+    }
 
     private const val MAX_LAYERS = 200
     private const val MAX_ROUNDS = 4
     private const val MAX_INFO_CHARS = 14000
+    private const val MAX_HISTORY = 24
+    private const val MAX_HISTORY_CHARS = 150000
     private val LOOKUPS = setOf("info_efek", "cari_efek", "info_bentuk")
 
     private class GeminiException(message: String, val soalBerpikir: Boolean = false) : Exception(message)
@@ -37,6 +76,7 @@ object AiGemini {
             obj.put("awal", layer.startTime)
             obj.put("durasi", layer.endTime - layer.startTime)
             layer.node["parent"]?.toLongOrNull()?.let { obj.put("induk_id", it) }
+            addValues(obj, layer.at(editor.timeMs, scene.fps))
             if (layer.hidden) obj.put("sembunyi", true)
             if (layer.locked) obj.put("kunci", true)
             if (layer.kind == "text") obj.put("isi", layer.content.take(200))
@@ -53,6 +93,30 @@ object AiGemini {
         editor.selectedId?.let { state.put("terpilih", it) }
         state.put("layer", layers)
         return state.toString()
+    }
+
+    private fun round1(value: Float): Double = (value * 10f).roundToInt() / 10.0
+
+    private fun addValues(obj: JSONObject, now: app.absentmotion.model.Layer) {
+        val location = now.location
+        obj.put("posisi_x", round1(location[0]))
+        obj.put("posisi_y", round1(location[1]))
+        val scale = now.scale
+        if (scale[0] == scale[1]) {
+            obj.put("skala", round1(scale[0] * 100f))
+        } else {
+            obj.put("skala_x", round1(scale[0] * 100f))
+            obj.put("skala_y", round1(scale[1] * 100f))
+        }
+        if (now.rotation != 0f) obj.put("rotasi", round1(now.rotation))
+        obj.put("opasitas", round1(now.opacity * 100f))
+        if (now.fillType != "none") obj.put("warna", String.format("#%06x", now.fillColor and 0xFFFFFF))
+        if (now.kind == "shape") {
+            val size = now.prop("size")
+            if (size != null && size.size >= 2) obj.put("ukuran", JSONArray().put(round1(size[0])).put(round1(size[1])))
+        }
+        val effects = now.effects.mapNotNull { it["id"]?.removePrefix("absent.") }
+        if (effects.isNotEmpty()) obj.put("efek", JSONArray(effects))
     }
 
     private fun tipeLayer(kind: String): String = when (kind) {
@@ -72,8 +136,43 @@ object AiGemini {
         request: String,
         onProgress: (String) -> Unit,
     ): AiAssistantResult {
-        val contents = JSONArray()
+        if (conversation.owner !== editor) {
+            conversation.reset()
+            conversation.owner = editor
+        }
+        val contents = conversation.contents
+        trimHistory(contents)
         contents.put(userContent("KEADAAN PROYEK:\n" + projectState(editor) + "\n\nPERMINTAAN PENGGUNA:\n" + request))
+        val result = try {
+            runRounds(editor, apiKey, model, thinking, contents, onProgress)
+        } catch (e: CancellationException) {
+            dropDanglingUser(contents)
+            throw e
+        }
+        if (result.galat != null) dropDanglingUser(contents)
+        return result
+    }
+
+    private fun trimHistory(contents: JSONArray) {
+        while (contents.length() > 2 && (contents.length() > MAX_HISTORY || contents.toString().length > MAX_HISTORY_CHARS)) {
+            contents.remove(0)
+        }
+        while (contents.length() > 0 && contents.optJSONObject(0)?.optString("role") != "user") contents.remove(0)
+    }
+
+    private fun dropDanglingUser(contents: JSONArray) {
+        val last = contents.length() - 1
+        if (last >= 0 && contents.optJSONObject(last)?.optString("role") == "user") contents.remove(last)
+    }
+
+    private suspend fun runRounds(
+        editor: EditorState,
+        apiKey: String,
+        model: String,
+        thinking: String,
+        contents: JSONArray,
+        onProgress: (String) -> Unit,
+    ): AiAssistantResult {
         val applied = ArrayList<String>()
         val skipped = ArrayList<Pair<String, String>>()
         var message = ""
@@ -87,6 +186,7 @@ object AiGemini {
             } catch (e: IOException) {
                 return partial(message, applied, skipped, "Tidak bisa menghubungi Gemini: " + (e.message ?: "periksa koneksi internet"))
             }
+            currentCoroutineContext().ensureActive()
             contents.put(reply.content)
 
             val root = parseRoot(reply.text)
@@ -342,6 +442,7 @@ object AiGemini {
 
         val url = java.net.URI("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent").toURL()
         val connection = url.openConnection() as HttpURLConnection
+        activeConnection = connection
         try {
             connection.requestMethod = "POST"
             connection.connectTimeout = 15000
@@ -356,6 +457,7 @@ object AiGemini {
             if (code !in 200..299) throw errorFor(code, text)
             return extractReply(text)
         } finally {
+            activeConnection = null
             connection.disconnect()
         }
     }
