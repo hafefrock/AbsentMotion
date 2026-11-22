@@ -53,6 +53,7 @@ internal fun AiSettingsRows() {
     var model by remember { mutableStateOf(AiConfig.model(context)) }
     var thinking by remember { mutableStateOf(AiConfig.thinking(context)) }
     var thinkingDialog by remember { mutableStateOf(false) }
+    var vision by remember { mutableStateOf(AiConfig.vision(context)) }
     var keyDialog by remember { mutableStateOf(false) }
     var modelDialog by remember { mutableStateOf(false) }
     var testing by remember { mutableStateOf(false) }
@@ -63,6 +64,11 @@ internal fun AiSettingsRows() {
     ActionRow("Model", model) { modelDialog = true }
     Divider(10.dp)
     ActionRow("Tingkat berpikir", AiConfig.thinkingLabel(thinking)) { thinkingDialog = true }
+    Divider(10.dp)
+    ActionRow("Lihat hasil (tangkapan frame)", if (vision) "Aktif" else "Mati", chevron = false) {
+        vision = !vision
+        AiConfig.setVision(context, vision)
+    }
     Divider(10.dp)
     ActionRow("Tes koneksi", chevron = false, busy = testing) {
         if (!testing) {
