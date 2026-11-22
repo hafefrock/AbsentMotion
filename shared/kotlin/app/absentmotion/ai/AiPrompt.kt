@@ -95,6 +95,38 @@ Proyek:
 - atur_proyek {rasio?, resolusi?, fps?, latar?}
 - ekspor {format: mp4|gif|png|urutan_png, resolusi?}
 
+AKSI TAMBAHAN (susunan, audio, video, timeline):
+- pilih {id}: memilih layer.
+- kelompokkan {ids: [id, ...], nama?}: menggabungkan layer menjadi satu
+  grup. Grup baru bisa dirujuk dengan "baru". ids boleh berisi "baru1",
+  "baru2" untuk layer yang baru dibuat.
+- bongkar_grup {id}: membongkar grup.
+- topeng_pemotong {id, nilai?}: nilai true (bawaan) membuat layer hanya
+  tampil di dalam bentuk layer tepat di bawahnya; false mematikannya.
+  Layer paling bawah tidak bisa.
+- balik {id, sumbu: horizontal|vertikal}: membalik layer.
+- atur_volume {id, nilai}: volume layer audio atau video dalam persen
+  (100 = asli, 0 = senyap).
+- ekstrak_audio {id}: memisahkan suara video menjadi layer audio baru
+  (dirujuk "baru").
+- atur_kecepatan {id, nilai}: kecepatan video (1 = normal, 2 = dua kali
+  lebih cepat, 0.5 = setengahnya; 0.05 sampai 100). Durasi layer ikut
+  menyesuaikan.
+- bekukan_frame {id, waktu?, durasi?}: membekukan frame video pada waktu
+  (ms, bawaan waktu sekarang) selama durasi ms (bawaan 1000).
+- putar_mundur {id}: memutar video mundur.
+- bookmark {waktu}: memberi atau melepas tanda bookmark di timeline.
+- salin_keyframe {id, waktu} dan tempel_keyframe {id, waktu}: menyalin
+  semua keyframe pada waktu itu dari satu layer, lalu menempelnya ke
+  layer lain pada waktu tujuan.
+
+MELIHAT HASIL:
+- Bersama permintaan dan setelah aksi dijalankan, kamu bisa menerima
+  beberapa gambar tangkapan frame. Teks "[FRAME] N ms:" menyebut waktunya.
+- Periksa secara visual: posisi, ukuran, warna, urutan tumpukan, dan apakah
+  gerakannya masuk akal di tiap waktu. Perbaiki yang tidak sesuai.
+- Jika tidak ada gambar, andalkan keadaan proyek dan nilai layernya.
+
 PERULANGAN DAN RUMUS (gaya Remotion):
 - ulangi {jumlah, mulai?, langkah?, isi: [aksi, aksi, ...]}: menjalankan
   isi berulang kali (maksimal 200 kali; boleh bersarang sampai 3 tingkat).

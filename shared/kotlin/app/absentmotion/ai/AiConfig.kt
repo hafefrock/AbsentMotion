@@ -64,6 +64,12 @@ object AiConfig {
 
     fun thinkingLabel(level: String): String = thinkingChoices.firstOrNull { it.first == level }?.second ?: "Otomatis"
 
+    fun vision(context: Context): Boolean = prefs(context).getBoolean("vision", true)
+
+    fun setVision(context: Context, on: Boolean) {
+        prefs(context).edit().putBoolean("vision", on).apply()
+    }
+
     fun cleanModel(model: String): String =
         model.trim().removePrefix("models/").filter { it.isLetterOrDigit() || it == '-' || it == '.' || it == '_' }
 }

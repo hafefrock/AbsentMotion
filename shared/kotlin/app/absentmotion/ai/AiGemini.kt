@@ -1,5 +1,6 @@
 package app.absentmotion.ai
 
+import android.util.Base64
 import app.absentmotion.editor.EditorState
 import app.absentmotion.effects.EffectParam
 import app.absentmotion.model.ShapeCatalog
@@ -12,6 +13,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import kotlin.math.roundToInt
@@ -56,6 +58,8 @@ object AiGemini {
     private const val MAX_ROUNDS = 4
     private const val MAX_INFO_CHARS = 14000
     private const val MAX_HISTORY = 24
+    private const val FRAME_SIZE = 512
+    private const val FRAME_LABEL = "[FRAME] "
     private const val MAX_HISTORY_CHARS = 150000
     private val LOOKUPS = setOf("info_efek", "cari_efek", "info_bentuk")
 
@@ -133,6 +137,8 @@ object AiGemini {
         apiKey: String,
         model: String,
         thinking: String,
+        vision: Boolean,
+        cacheDir: File,
         request: String,
         onProgress: (String) -> Unit,
     ): AiAssistantResult {
@@ -142,9 +148,15 @@ object AiGemini {
         }
         val contents = conversation.contents
         trimHistory(contents)
-        contents.put(userContent("KEADAAN PROYEK:\n" + projectState(editor) + "\n\nPERMINTAAN PENGGUNA:\n" + request))
+        val frames = if (vision) {
+            onProgress("Memeriksa proyek...")
+            captureFrames(editor, cacheDir)
+        } else {
+            emptyList<Pair<String, String>>()
+        }
+        contents.put(userContent("KEADAAN PROYEK:\n" + projectState(editor) + "\n\nPERMINTAAN PENGGUNA:\n" + request, frames))
         val result = try {
-            runRounds(editor, apiKey, model, thinking, contents, onProgress)
+            runRounds(editor, apiKey, model, thinking, vision, cacheDir, contents, onProgress)
         } catch (e: CancellationException) {
             dropDanglingUser(contents)
             throw e
@@ -170,6 +182,8 @@ object AiGemini {
         apiKey: String,
         model: String,
         thinking: String,
+        vision: Boolean,
+        cacheDir: File,
         contents: JSONArray,
         onProgress: (String) -> Unit,
     ): AiAssistantResult {
@@ -187,6 +201,7 @@ object AiGemini {
                 return partial(message, applied, skipped, "Tidak bisa menghubungi Gemini: " + (e.message ?: "periksa koneksi internet"))
             }
             currentCoroutineContext().ensureActive()
+            stripImages(contents)
             contents.put(reply.content)
 
             val root = parseRoot(reply.text)
@@ -221,7 +236,13 @@ object AiGemini {
             val info = if (lookups.isNotEmpty()) answerLookups(editor, lookups) else ""
             val done = root.optBoolean("selesai", false)
             if (lookups.isEmpty() && (edits.isEmpty() || done) || round == MAX_ROUNDS) break
-            contents.put(userContent(feedback(editor, round, roundApplied, roundSkipped, created, info)))
+            val frames = if (vision && edits.isNotEmpty()) {
+                onProgress("Memeriksa hasil...")
+                captureFrames(editor, cacheDir)
+            } else {
+                emptyList<Pair<String, String>>()
+            }
+            contents.put(userContent(feedback(editor, round, roundApplied, roundSkipped, created, info), frames))
         }
 
         if (applied.isEmpty() && skipped.isEmpty()) {
@@ -248,6 +269,17 @@ object AiGemini {
                 val problem = resolveRefs(item, created)
                 if (problem != null) {
                     skipped += item.optString("aksi", "(kosong)") to problem
+                    continue
+                }
+                val name = item.optString("aksi", "").lowercase()
+                if (name in AiExtra.NAMES) {
+                    try {
+                        val outcome = AiExtra.run(editor, item)
+                        applied += outcome.ringkasan
+                        outcome.dibuat?.let { created += it }
+                    } catch (e: Exception) {
+                        skipped += name to (e.message?.takeIf { it.isNotBlank() } ?: "Kesalahan tidak terduga")
+                    }
                     continue
                 }
                 val single = JSONObject().put("aksi", JSONArray().put(item)).toString()
@@ -360,8 +392,57 @@ object AiGemini {
 
     // ---------------------------------------------------------------- bentuk JSON
 
-    private fun userContent(text: String): JSONObject =
-        JSONObject().put("role", "user").put("parts", JSONArray().put(JSONObject().put("text", text)))
+    private fun userContent(text: String, frames: List<Pair<String, String>> = emptyList()): JSONObject {
+        val parts = JSONArray().put(JSONObject().put("text", text))
+        for ((label, data) in frames) {
+            parts.put(JSONObject().put("text", FRAME_LABEL + label + ":"))
+            parts.put(JSONObject().put("inlineData", JSONObject().put("mimeType", "image/png").put("data", data)))
+        }
+        return JSONObject().put("role", "user").put("parts", parts)
+    }
+
+    private fun stripImages(contents: JSONArray) {
+        for (i in 0 until contents.length()) {
+            val parts = contents.optJSONObject(i)?.optJSONArray("parts") ?: continue
+            val kept = JSONArray()
+            for (j in 0 until parts.length()) {
+                val part = parts.optJSONObject(j)
+                if (part == null) continue
+                if (part.has("inlineData")) continue
+                if (part.optString("text", "").startsWith(FRAME_LABEL)) continue
+                kept.put(part)
+            }
+            if (kept.length() > 0 && kept.length() != parts.length()) contents.optJSONObject(i)?.put("parts", kept)
+        }
+    }
+
+    private suspend fun captureFrames(editor: EditorState, cacheDir: File): List<Pair<String, String>> {
+        val scene = editor.scene
+        if (scene.layers.isEmpty()) return emptyList()
+        val total = scene.totalTime
+        val times = if (total > 0) listOf(total / 10, total / 2, total * 9 / 10) else listOf(editor.timeMs)
+        val longSide = maxOf(scene.width, scene.height).coerceAtLeast(1)
+        val width = (FRAME_SIZE * scene.width / longSide).coerceAtLeast(1)
+        val height = (FRAME_SIZE * scene.height / longSide).coerceAtLeast(1)
+        val xml = withContext(Dispatchers.IO) { scene.toXml() }
+        val out = ArrayList<Pair<String, String>>()
+        for (time in times.distinct()) {
+            val file = File(cacheDir, "ai-frame-" + System.nanoTime() + ".png")
+            try {
+                if (editor.engine.stillPng(xml, time, width, height, file)) {
+                    val data = withContext(Dispatchers.IO) { Base64.encodeToString(file.readBytes(), Base64.NO_WRAP) }
+                    out += "$time ms" to data
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // satu frame yang gagal dirender dilewati
+            } finally {
+                file.delete()
+            }
+        }
+        return out
+    }
 
     private fun parseRoot(text: String): JSONObject? {
         val clean = cleanJson(text)
@@ -407,6 +488,17 @@ object AiGemini {
             val id = (if (n == null) created.lastOrNull() else created.getOrNull(n - 1))
                 ?: return "Referensi '$text' tidak ada: belum ada layer baru yang berhasil dibuat"
             item.put(key, id)
+        }
+        val ids = item.optJSONArray("ids")
+        if (ids != null) {
+            for (i in 0 until ids.length()) {
+                val text = (ids.opt(i) as? String)?.trim()?.lowercase() ?: continue
+                if (!text.startsWith("baru")) continue
+                val n = text.removePrefix("baru").toIntOrNull()
+                val id = (if (n == null) created.lastOrNull() else created.getOrNull(n - 1))
+                    ?: return "Referensi '$text' tidak ada: belum ada layer baru yang berhasil dibuat"
+                ids.put(i, id)
+            }
         }
         return null
     }
