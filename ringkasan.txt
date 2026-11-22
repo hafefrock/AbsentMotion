@@ -1,8 +1,15 @@
-hasil: success
-commit: cfe5d5cef39131d117d7cd551aee7a16cefe03e6
+hasil: failure
+commit: 38114da09ba3d86d7b022c15c209f124b35f61af
 branch: ai-fitur
-waktu: 2026-11-22T09:01:28Z
+waktu: 2026-11-22T14:55:27Z
 
-BUILD SUCCESSFUL in 2m 16s
+e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:158:51 No value passed for parameter 'cacheDir'.
+e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:158:51 No value passed for parameter 'request'.
+e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:158:84 Argument type mismatch: actual type is 'String', but 'Boolean' was expected.
+* What went wrong:
+Execution failed for task ':app:compileCompat32DebugKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Kotlin compiler: NO_VALUE_FOR_PARAMETER
+--
+BUILD FAILED in 1m 31s
 7 actionable tasks: 7 executed
-Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.2/userguide/configuration_cache_enabling.html
