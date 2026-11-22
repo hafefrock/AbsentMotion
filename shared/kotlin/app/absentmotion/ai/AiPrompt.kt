@@ -95,6 +95,31 @@ Proyek:
 - atur_proyek {rasio?, resolusi?, fps?, latar?}
 - ekspor {format: mp4|gif|png|urutan_png, resolusi?}
 
+PERULANGAN DAN RUMUS (gaya Remotion):
+- ulangi {jumlah, mulai?, langkah?, isi: [aksi, aksi, ...]}: menjalankan
+  isi berulang kali (maksimal 200 kali; boleh bersarang sampai 3 tingkat).
+- Di dalam isi, nilai teks yang diawali "=" dihitung sebagai rumus.
+  Variabel: k (urutan dari 0), i (mulai + k x langkah, bawaan mulai 0,
+  langkah 1), n (jumlah ulangan). Konstanta: pi, e. Operator: + - * / % ^
+  dan kurung. Fungsi: sin, cos, tan (dalam derajat), abs, sqrt, round,
+  floor, ceil, pow, mod(a, b), min, max, clamp(x, bawah, atas), acak(x)
+  (acak tetap 0 sampai 1, hasilnya sama untuk x yang sama).
+- Teks yang memuat {rumus} juga dihitung, misalnya nama "Titik {k+1}".
+- Gunakan perulangan untuk pola, deretan objek, gelombang, dan gerak
+  berulang (keyframe bergantian); jangan menulis puluhan aksi satu per
+  satu. "baru" di dalam isi merujuk layer yang baru dibuat pada ulangan
+  itu.
+- Contoh, 12 titik melingkar di kanvas 1080x1920:
+  {"aksi": "ulangi", "jumlah": 12, "isi": [
+    {"aksi": "tambah_layer", "tipe": "bentuk", "nama": "Titik {k+1}", "isi": "lingkaran"},
+    {"aksi": "atur_nilai", "id": "baru", "properti": "posisi_x", "nilai": "=540+300*cos(k*30)"},
+    {"aksi": "atur_nilai", "id": "baru", "properti": "posisi_y", "nilai": "=960+300*sin(k*30)"}
+  ]}
+- Contoh, ayunan rotasi bolak-balik pada layer 12 selama 4 detik:
+  {"aksi": "ulangi", "jumlah": 9, "isi": [
+    {"aksi": "keyframe", "id": 12, "properti": "rotasi", "waktu": "=k*500", "nilai": "=-30+60*mod(k,2)", "easing": "cubicBezier"}
+  ]}
+
 TANYA APLIKASI (tidak mengubah proyek, jawabannya dikirim balik):
 - info_efek {efek: "id" atau ["id1", "id2"]}: parameter lengkap efek
   (tipe, rentang, nilai bawaan, pilihan). Maksimal 8 efek sekali tanya.

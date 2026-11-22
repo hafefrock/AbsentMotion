@@ -242,8 +242,9 @@ object AiGemini {
         applied: MutableList<String>,
         skipped: MutableList<Pair<String, String>>,
     ) {
+        val items = AiLoop.expandAll(edits, skipped)
         editor.batchEdit {
-            for (item in edits) {
+            for (item in items) {
                 val problem = resolveRefs(item, created)
                 if (problem != null) {
                     skipped += item.optString("aksi", "(kosong)") to problem
