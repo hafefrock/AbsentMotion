@@ -50,7 +50,8 @@ internal object AiExtra {
     // ---------------------------------------------------------------- pembantu
 
     private fun idOf(item: JSONObject, key: String = "id"): Long {
-        val id = when (val raw = item.opt(key)) {
+        val raw: Any? = item.opt(key)
+        val id = when (raw) {
             is Number -> raw.toLong()
             is String -> raw.trim().toLongOrNull()
             else -> null
@@ -67,21 +68,27 @@ internal object AiExtra {
         if (!isVideo(layer)) throw IllegalArgumentException("Layer id=${layer.id} bukan layer video")
     }
 
-    private fun number(item: JSONObject, key: String): Double? = when (val raw = item.opt(key)) {
-        is Number -> raw.toDouble()
-        is String -> raw.trim().removeSuffix("%").toDoubleOrNull()
-        else -> null
+    private fun number(item: JSONObject, key: String): Double? {
+        val raw: Any? = item.opt(key)
+        return when (raw) {
+            is Number -> raw.toDouble()
+            is String -> raw.trim().removeSuffix("%").toDoubleOrNull()
+            else -> null
+        }
     }
 
-    private fun flag(item: JSONObject, key: String, default: Boolean): Boolean = when (val raw = item.opt(key)) {
-        is Boolean -> raw
-        is Number -> raw.toInt() != 0
-        is String -> when (raw.trim().lowercase()) {
-            "true", "ya", "aktif", "on", "1" -> true
-            "false", "tidak", "mati", "off", "0" -> false
+    private fun flag(item: JSONObject, key: String, default: Boolean): Boolean {
+        val raw: Any? = item.opt(key)
+        return when (raw) {
+            is Boolean -> raw
+            is Number -> raw.toInt() != 0
+            is String -> when (raw.trim().lowercase()) {
+                "true", "ya", "aktif", "on", "1" -> true
+                "false", "tidak", "mati", "off", "0" -> false
+                else -> default
+            }
             else -> default
         }
-        else -> default
     }
 
     private fun <T> atTime(editor: EditorState, ms: Int?, block: () -> T): T {
