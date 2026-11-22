@@ -47,11 +47,18 @@ object AiGemini {
 
     val conversation = AiConversation()
 
+    /** Penyedia lain yang kompatibel OpenAI (Groq, NVIDIA, OpenRouter, dll). null berarti pakai Gemini. */
+    @Volatile
+    var remote: AiRemote? = null
+
+    private val nama: String get() = remote?.label ?: "Gemini"
+
     @Volatile
     private var activeConnection: HttpURLConnection? = null
 
     fun cancelActive() {
         activeConnection?.disconnect()
+        AiOpenAi.cancelActive()
     }
 
     private const val MAX_LAYERS = 200
@@ -196,16 +203,16 @@ object AiGemini {
             val reply = try {
                 withContext(Dispatchers.IO) { callModel(model, apiKey, contents, thinking) }
             } catch (e: GeminiException) {
-                return partial(message, applied, skipped, e.message ?: "Gemini gagal menjawab")
+                return partial(message, applied, skipped, e.message ?: "$nama gagal menjawab")
             } catch (e: IOException) {
-                return partial(message, applied, skipped, "Tidak bisa menghubungi Gemini: " + (e.message ?: "periksa koneksi internet"))
+                return partial(message, applied, skipped, "Tidak bisa menghubungi $nama: " + (e.message ?: "periksa koneksi internet"))
             }
             currentCoroutineContext().ensureActive()
             stripImages(contents)
             contents.put(reply.content)
 
             val root = parseRoot(reply.text)
-                ?: return partial(message, applied, skipped, "Jawaban Gemini tidak bisa dibaca")
+                ?: return partial(message, applied, skipped, "Jawaban $nama tidak bisa dibaca")
             val pesan = root.optString("pesan", "")
             if (pesan.isNotBlank()) message = pesan
 
@@ -246,7 +253,7 @@ object AiGemini {
         }
 
         if (applied.isEmpty() && skipped.isEmpty()) {
-            return if (message.isBlank()) AiAssistantResult("", null, "Gemini tidak memberi aksi apa pun") else AiAssistantResult(message, null)
+            return if (message.isBlank()) AiAssistantResult("", null, "$nama tidak memberi aksi apa pun") else AiAssistantResult(message, null)
         }
         return AiAssistantResult(message, AiResult(applied, skipped))
     }
@@ -511,18 +518,28 @@ object AiGemini {
             withContext(Dispatchers.IO) { callModel(model, apiKey, contents, "") }
             "✓ Terhubung ke $model"
         } catch (e: GeminiException) {
-            "✗ " + (e.message ?: "Gemini gagal menjawab")
+            "✗ " + (e.message ?: "$nama gagal menjawab")
         } catch (e: IOException) {
-            "✗ Tidak bisa menghubungi Gemini: " + (e.message ?: "periksa koneksi internet")
+            "✗ Tidak bisa menghubungi $nama: " + (e.message ?: "periksa koneksi internet")
         }
     }
 
-    private fun callModel(model: String, apiKey: String, contents: JSONArray, thinking: String): Reply =
-        try {
+    private fun callModel(model: String, apiKey: String, contents: JSONArray, thinking: String): Reply {
+        val other = remote
+        if (other != null) {
+            try {
+                val (text, content) = AiOpenAi.call(other, contents, thinking)
+                return Reply(text, content)
+            } catch (e: AiOpenAi.RemoteException) {
+                throw GeminiException(e.message ?: "${other.label} gagal menjawab")
+            }
+        }
+        return try {
             post(model, apiKey, contents, thinking)
         } catch (e: GeminiException) {
             if (thinking.isNotBlank() && e.soalBerpikir) post(model, apiKey, contents, "") else throw e
         }
+    }
 
     private fun post(model: String, apiKey: String, contents: JSONArray, thinking: String): Reply {
         val systemPart = JSONObject().put("parts", JSONArray().put(JSONObject().put("text", AiPrompt.sistem)))
