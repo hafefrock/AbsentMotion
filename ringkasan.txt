@@ -1,16 +1,8 @@
-hasil: failure
-commit: 1cbfb5790e9fa404fdf13bb39b83c1bcec76c1ad
+hasil: success
+commit: fdbf1960d7d4b5b092c442e39dbc4152334b9255
 branch: ai-fitur
-waktu: 2026-11-22T14:59:11Z
+waktu: 2026-11-22T15:13:06Z
 
-e: warnings found and -Werror specified
-e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ai/AiExtra.kt:53:18 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
-e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ai/AiExtra.kt:70:66 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
-e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ai/AiExtra.kt:76:82 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
-* What went wrong:
-Execution failed for task ':app:compileCompat32DebugKotlin' (registered by plugin 'com.android.internal.application').
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
-   > Kotlin compiler error
---
-BUILD FAILED in 2m 4s
+BUILD SUCCESSFUL in 3m 1s
 7 actionable tasks: 7 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.2/userguide/configuration_cache_enabling.html
