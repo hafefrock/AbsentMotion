@@ -1,7 +1,7 @@
 hasil: failure
-commit: 42ef259c95bb012f16f561d2b75c598695e0321e
+commit: 1cbfb5790e9fa404fdf13bb39b83c1bcec76c1ad
 branch: ai-fitur
-waktu: 2026-11-22T14:57:59Z
+waktu: 2026-11-22T14:59:11Z
 
 e: warnings found and -Werror specified
 e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ai/AiExtra.kt:53:18 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
@@ -12,5 +12,5 @@ Execution failed for task ':app:compileCompat32DebugKotlin' (registered by plugi
 > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
    > Kotlin compiler error
 --
-BUILD FAILED in 2m 6s
+BUILD FAILED in 2m 4s
 7 actionable tasks: 7 executed
