@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.absentmotion.ai.AiConfig
 import app.absentmotion.ai.AiGemini
+import app.absentmotion.ai.AiRemoteConfig
 import app.absentmotion.editor.EditorState
 import app.absentmotion.ui.theme.Am
 import kotlinx.coroutines.Job
@@ -58,8 +59,9 @@ internal fun AiBarButton(state: EditorState, modifier: Modifier = Modifier) {
 @Composable
 private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
     val context = LocalContext.current
-    val key = remember { AiConfig.apiKey(context) }
-    val model = remember { AiConfig.model(context) }
+    val remote = remember { AiRemoteConfig.active(context) }
+    val key = remember { remote?.apiKey ?: AiConfig.apiKey(context) }
+    val model = remember { remote?.model ?: AiConfig.model(context) }
     val thinking = remember { AiConfig.thinking(context) }
     val vision = remember { AiConfig.vision(context) }
     var request by remember { mutableStateOf("") }
@@ -89,7 +91,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 if (key.isBlank()) {
                     Text(
-                        "API key Gemini belum diisi. Buka Pengaturan di layar daftar proyek, lalu isi \"Asisten AI\" → API key Gemini.",
+                        "API key ${remote?.label ?: "Gemini"} belum diisi. Buka Pengaturan di layar daftar proyek, lalu isi \"Asisten AI\".",
                         color = Am.OnDark,
                         fontSize = 14.sp,
                     )
@@ -156,6 +158,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                         applied = emptyList()
                         skipped = emptyList()
                         job = scope.launch {
+                            AiGemini.remote = remote
                             val result = AiGemini.run(state, key, model, thinking, vision, context.cacheDir, text) { progress = it }
                             if (!isActive) return@launch
                             busy = false
