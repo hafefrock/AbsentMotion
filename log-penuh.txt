@@ -38,9 +38,10 @@ Installing Android SDK Build-Tools 36 in /opt/android-sdk/build-tools/36.0.0
 > Task :app:parseCompat32DebugLocalResources
 > Task :app:generateCompat32DebugRFile
 > Task :app:compileCompat32DebugKotlin
-e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:158:51 No value passed for parameter 'cacheDir'.
-e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:158:51 No value passed for parameter 'request'.
-e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:158:84 Argument type mismatch: actual type is 'String', but 'Boolean' was expected.
+e: warnings found and -Werror specified
+e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ai/AiExtra.kt:53:18 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ai/AiExtra.kt:70:66 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+e: file:///__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ai/AiExtra.kt:76:82 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
 
 > Task :app:compileCompat32DebugKotlin FAILED
 
@@ -51,10 +52,9 @@ FAILURE: Build failed with an exception.
 * What went wrong:
 Execution failed for task ':app:compileCompat32DebugKotlin' (registered by plugin 'com.android.internal.application').
 > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
-   > Kotlin compiler: NO_VALUE_FOR_PARAMETER
+   > Kotlin compiler error
        Kotlin compiler error
-         No value passed for parameter 'cacheDir'.
-         Location: /__w/AbsentMotion/AbsentMotion/shared/kotlin/app/absentmotion/ui/editor/AiSheet.kt:158
+         warnings found and -Werror specified
 
 * Try:
 > Run with --stacktrace option to get the stack trace.
@@ -68,5 +68,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m 31s
+BUILD FAILED in 2m 6s
 7 actionable tasks: 7 executed
