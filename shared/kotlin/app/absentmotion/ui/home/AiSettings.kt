@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.absentmotion.ai.AiConfig
 import app.absentmotion.ai.AiGemini
+import app.absentmotion.ai.AiRemoteConfig
 import app.absentmotion.ui.theme.Am
 import kotlinx.coroutines.launch
 
@@ -58,6 +59,14 @@ internal fun AiSettingsRows() {
     var modelDialog by remember { mutableStateOf(false) }
     var testing by remember { mutableStateOf(false) }
     var testResult by remember { mutableStateOf("") }
+    var provider by remember { mutableStateOf(AiRemoteConfig.provider(context)) }
+
+    AiProviderRow(provider) { provider = it }
+    Divider(10.dp)
+    if (provider != AiRemoteConfig.GEMINI) {
+        AiRemoteRows(provider)
+        return
+    }
 
     ActionRow("API key Gemini", if (apiKey.isBlank()) "Belum diisi" else "••••" + apiKey.takeLast(4)) { keyDialog = true }
     Divider(10.dp)
