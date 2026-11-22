@@ -61,6 +61,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
     val key = remember { AiConfig.apiKey(context) }
     val model = remember { AiConfig.model(context) }
     val thinking = remember { AiConfig.thinking(context) }
+    val vision = remember { AiConfig.vision(context) }
     var request by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf("") }
@@ -93,7 +94,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                         fontSize = 14.sp,
                     )
                 } else {
-                    Text("Model: $model  •  Berpikir: ${AiConfig.thinkingLabel(thinking)}", color = Am.OnDark.copy(alpha = 0.7f), fontSize = 12.sp)
+                    Text("Model: $model  •  Berpikir: ${AiConfig.thinkingLabel(thinking)}  •  Lihat hasil: ${if (vision) "ya" else "tidak"}", color = Am.OnDark.copy(alpha = 0.7f), fontSize = 12.sp)
                     if (turns > 0) {
                         Text("Percakapan berlanjut: $turns permintaan", color = Am.OnDark.copy(alpha = 0.7f), fontSize = 12.sp)
                     }
@@ -155,7 +156,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                         applied = emptyList()
                         skipped = emptyList()
                         job = scope.launch {
-                            val result = AiGemini.run(state, key, model, thinking, text) { progress = it }
+                            val result = AiGemini.run(state, key, model, thinking, vision, context.cacheDir, text) { progress = it }
                             if (!isActive) return@launch
                             busy = false
                             progress = ""
