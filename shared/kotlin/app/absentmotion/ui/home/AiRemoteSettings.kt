@@ -107,6 +107,7 @@ internal fun AiRemoteRows(id: String) {
     var model by remember(id) { mutableStateOf(AiRemoteConfig.model(context, id)) }
     var baseUrl by remember(id) { mutableStateOf(AiRemoteConfig.baseUrl(context, id)) }
     var vision by remember { mutableStateOf(AiConfig.vision(context)) }
+    var slim by remember { mutableStateOf(AiRemoteConfig.slimMode(context)) }
     var dialog by remember(id) { mutableStateOf("") }
     var testing by remember { mutableStateOf(false) }
     var testResult by remember(id) { mutableStateOf("") }
@@ -122,6 +123,11 @@ internal fun AiRemoteRows(id: String) {
     ActionRow("Lihat hasil (tangkapan frame)", if (vision) "Aktif" else "Mati", chevron = false) {
         vision = !vision
         AiConfig.setVision(context, vision)
+    }
+    Divider(10.dp)
+    ActionRow("Prompt ringan (hemat token)", if (slim == "on") "Selalu" else if (slim == "off") "Mati" else "Otomatis", chevron = false) {
+        slim = if (slim == "auto") "on" else if (slim == "on") "off" else "auto"
+        AiRemoteConfig.setSlimMode(context, slim)
     }
     Divider(10.dp)
     ActionRow("Tes koneksi", chevron = false, busy = testing) {
@@ -143,7 +149,7 @@ internal fun AiRemoteRows(id: String) {
         Text(testResult, Modifier.padding(horizontal = 15.dp, vertical = 4.dp), color = Am.HomeMid, fontSize = 12.sp, lineHeight = 16.sp)
     }
     Text(
-        "\"Lihat hasil\" hanya dipakai kalau modelnya mendukung gambar. Kalau tidak, aplikasi otomatis mengirim teks saja.",
+        "\"Lihat hasil\" hanya dipakai kalau modelnya mendukung gambar. Kalau tidak, aplikasi otomatis mengirim teks saja. \"Prompt ringan\" memangkas daftar efek (sekitar separuh ukuran prompt) dan memakai tanya-aplikasi; Otomatis hanya untuk Groq, yang batas tokennya kecil.",
         Modifier.padding(horizontal = 15.dp, vertical = 4.dp),
         color = Am.HomeMid,
         fontSize = 11.sp,
@@ -171,7 +177,7 @@ internal fun AiRemoteRows(id: String) {
         )
         "model" -> RemoteTextDialog(
             title = "Model $label",
-            info = "Tulis nama model persis seperti di dokumentasi penyedia. Nama model bisa berubah, jadi ganti di sini kalau muncul galat \"model tidak ditemukan\".",
+            info = "Pilih dari saran, atau tulis nama model persis seperti di dokumentasi penyedia. Nama model gratis sering berganti, jadi ganti di sini kalau muncul galat \"model tidak ditemukan\".",
             fieldLabel = "Nama model",
             initial = model,
             secret = false,
@@ -181,6 +187,7 @@ internal fun AiRemoteRows(id: String) {
             },
             onClose = { dialog = "" },
             onClear = null,
+            suggestions = preset?.saran.orEmpty(),
         )
         "url" -> RemoteTextDialog(
             title = "Alamat server",
@@ -208,6 +215,7 @@ private fun RemoteTextDialog(
     onSave: (String) -> Unit,
     onClose: () -> Unit,
     onClear: (() -> Unit)?,
+    suggestions: List<String> = emptyList(),
 ) {
     val context = LocalContext.current
     var text by remember { mutableStateOf(initial) }
@@ -215,9 +223,16 @@ private fun RemoteTextDialog(
         onDismissRequest = onClose,
         title = { Text(title, color = Am.Navy) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(info, color = Am.Navy, fontSize = 14.sp)
                 Spacer(Modifier.height(8.dp))
+                if (suggestions.isNotEmpty()) {
+                    Text("Saran model (ketuk untuk memilih):", color = Am.Navy, fontSize = 12.sp)
+                    for (suggestion in suggestions) {
+                        TextButton({ text = suggestion }) { Text(suggestion, color = Am.HomeAccent, fontSize = 13.sp) }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                }
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it.trim() },
