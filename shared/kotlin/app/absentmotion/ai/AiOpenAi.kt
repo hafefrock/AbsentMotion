@@ -7,19 +7,51 @@ import java.io.IOException
 import java.net.HttpURLConnection
 
 /** Penyedia AI lain yang memakai format Chat Completions ala OpenAI (Groq, NVIDIA NIM, OpenRouter, dll). */
-class AiRemote(val id: String, val label: String, val baseUrl: String, val apiKey: String, val model: String)
+class AiRemote(val id: String, val label: String, val baseUrl: String, val apiKey: String, val model: String, val ringan: Boolean = false)
 
-class AiPreset(val id: String, val label: String, val baseUrl: String, val defaultModel: String, val keyPage: String)
+class AiPreset(
+    val id: String,
+    val label: String,
+    val baseUrl: String,
+    val defaultModel: String,
+    val keyPage: String,
+    val saran: List<String> = emptyList(),
+)
 
 object AiRemoteConfig {
 
     const val GEMINI = "gemini"
 
-    // Nama model bisa berubah. Semuanya bisa diganti dari Pengaturan.
+    // Nama model dan batas gratis sering berubah (dicek November 2026). Semuanya bisa diganti dari Pengaturan.
+    // Groq gratis dibatasi sekitar 8.000 token per menit, jadi prompt ringan dipakai otomatis.
+    // NVIDIA NIM gratis: sekitar 40 permintaan per menit. OpenRouter gratis: 20 per menit, 50 per hari.
     val presets: List<AiPreset> = listOf(
-        AiPreset("groq", "Groq", "https://api.groq.com/openai/v1", "openai/gpt-oss-120b", "console.groq.com/keys"),
-        AiPreset("nvidia", "NVIDIA NIM", "https://integrate.api.nvidia.com/v1", "openai/gpt-oss-120b", "build.nvidia.com"),
-        AiPreset("openrouter", "OpenRouter", "https://openrouter.ai/api/v1", "nvidia/nemotron-3-super-120b-a12b:free", "openrouter.ai/keys"),
+        AiPreset(
+            "groq", "Groq", "https://api.groq.com/openai/v1", "openai/gpt-oss-120b", "console.groq.com/keys",
+            listOf("openai/gpt-oss-120b", "openai/gpt-oss-20b"),
+        ),
+        AiPreset(
+            "nvidia", "NVIDIA NIM", "https://integrate.api.nvidia.com/v1", "deepseek-ai/deepseek-v4.1-flash", "build.nvidia.com",
+            listOf(
+                "deepseek-ai/deepseek-v4.1-flash",
+                "z-ai/glm-5.3-flash",
+                "nvidia/nemotron-3-ultra-550b-a55b",
+                "mistralai/mistral-large-4-1t-a52b",
+                "minimaxai/minimax-m3.1-flash",
+                "google/gemma-4-31b-it",
+                "nvidia/nemotron-3.5-super-vl-120b-a12b",
+            ),
+        ),
+        AiPreset(
+            "openrouter", "OpenRouter", "https://openrouter.ai/api/v1", "google/gemma-4-26b-a4b-it:free", "openrouter.ai/keys",
+            listOf(
+                "google/gemma-4-26b-a4b-it:free",
+                "google/gemma-4-31b-it:free",
+                "nvidia/nemotron-3.5-super-vl:free",
+                "nvidia/nemotron-3-ultra-550b-a55b:free",
+                "openrouter/free",
+            ),
+        ),
         AiPreset("custom", "Kustom (alamat sendiri)", "", "", ""),
     )
 
@@ -62,11 +94,27 @@ object AiRemoteConfig {
         prefs(context).edit().putString("base_$id", url.trim().trimEnd('/')).apply()
     }
 
+    /** auto = ringan hanya untuk Groq, on = selalu ringan, off = selalu lengkap. */
+    fun slimMode(context: Context): String {
+        val mode = prefs(context).getString("slim", "auto").orEmpty()
+        return if (mode == "on" || mode == "off") mode else "auto"
+    }
+
+    fun setSlimMode(context: Context, mode: String) {
+        prefs(context).edit().putString("slim", mode).apply()
+    }
+
     /** null berarti pakai Gemini. */
     fun active(context: Context): AiRemote? {
         val id = provider(context)
         val preset = preset(id) ?: return null
-        return AiRemote(id, preset.label, baseUrl(context, id), apiKey(context, id), model(context, id))
+        val url = baseUrl(context, id)
+        val slim = when (slimMode(context)) {
+            "on" -> true
+            "off" -> false
+            else -> url.contains("groq.com")
+        }
+        return AiRemote(id, preset.label, url, apiKey(context, id), model(context, id), slim)
     }
 }
 
@@ -78,6 +126,7 @@ object AiOpenAi {
 
     private const val FRAME_LABEL = "[FRAME] "
     private const val MAX_TOKENS = 8000
+    private const val SLIM_MAX_TOKENS = 3000
 
     @Volatile
     private var activeConnection: HttpURLConnection? = null
@@ -148,8 +197,9 @@ object AiOpenAi {
 
     private fun textBlock(text: String): JSONObject = JSONObject().put("type", "text").put("text", text)
 
-    private fun buildMessages(contents: JSONArray, images: Boolean): JSONArray {
-        val messages = JSONArray().put(JSONObject().put("role", "system").put("content", AiPrompt.sistem))
+    private fun buildMessages(contents: JSONArray, images: Boolean, slim: Boolean): JSONArray {
+        val system = if (slim) AiPrompt.ringan else AiPrompt.sistem
+        val messages = JSONArray().put(JSONObject().put("role", "system").put("content", system))
         for (i in 0 until contents.length()) {
             val item = contents.optJSONObject(i) ?: continue
             val role = if (item.optString("role") == "model") "assistant" else "user"
@@ -190,10 +240,10 @@ object AiOpenAi {
     private fun post(remote: AiRemote, contents: JSONArray, thinking: String, skip: Set<String>): String {
         val body = JSONObject()
             .put("model", remote.model)
-            .put("messages", buildMessages(contents, "images" !in skip))
+            .put("messages", buildMessages(contents, "images" !in skip, remote.ringan))
             .put("stream", false)
         if ("format" !in skip) body.put("response_format", JSONObject().put("type", "json_object"))
-        if ("max" !in skip) body.put("max_tokens", MAX_TOKENS)
+        if ("max" !in skip) body.put("max_tokens", if (remote.ringan) SLIM_MAX_TOKENS else MAX_TOKENS)
         val effort = thinking.lowercase()
         if ("reasoning" !in skip && effort in setOf("low", "medium", "high") &&
             remote.baseUrl.contains("groq.com") && remote.model.contains("gpt-oss")

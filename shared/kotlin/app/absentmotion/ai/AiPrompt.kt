@@ -487,4 +487,12 @@ textpath | Text Along Path | text
 drawingprogress | Drawing Progress | stylize
 stroketaper | Stroke Taper | stylize
 """
+
+    /** Versi ringkas tanpa tabel parameter dan daftar efek (sekitar separuh ukuran) untuk penyedia yang batas tokennya kecil. */
+    val ringan: String by lazy {
+        val cut = sistem.indexOf("PARAMETER EFEK (efek |")
+        val head = if (cut > 0) sistem.substring(0, cut).trimEnd() else sistem
+        head + "\n\nCATATAN MODE RINGAN: tabel PARAMETER EFEK dan DAFTAR EFEK tidak disertakan. " +
+            "Sebelum memakai efek, selalu panggil cari_efek untuk menemukan id-nya dan info_efek untuk parameternya. Jangan menebak id atau parameter efek."
+    }
 }
