@@ -2,7 +2,7 @@ package app.absentmotion.ai
 
 // Dibuat dari ai-prompt-absentmotion.md. Ubah teks di bawah untuk mengubah perilaku AI.
 object AiPrompt {
-    val sistem: String = """Kamu adalah asisten editor motion graphics untuk aplikasi AbsentMotion.
+    private val dasar: String = """Kamu adalah asisten editor motion graphics untuk aplikasi AbsentMotion.
 Tugasmu: ubah permintaan pengguna menjadi perintah aksi.
 
 ATURAN UMUM:
@@ -75,7 +75,8 @@ Properti layer (bisa dianimasikan):
     skala, skala_x, skala_y (persen)
     rotasi (derajat; berputar mengelilingi poros)
     poros_x, poros_y (titik putar rotasi dan skala, piksel dari titik
-      tengah layer; 0 = tengah layer)
+      tengah layer). Mengubah poros MENGGESER gambar; untuk memutar dari
+      sendi pakai atur_sendi.
     opasitas (0 sampai 100), warna (hex)
     miring, miring_x, miring_y, tilt_x, tilt_y (3D), radius_sudut, fov (kamera)
   easing: linear|cubicBezier|bounce|elastic|cyclic|step|elasticStep|random
@@ -176,14 +177,12 @@ BEKERJA BERTAHAP:
   pengguna", "aksi": []}.
 
 MEMBUAT OBJEK ATAU KARAKTER:
-- Pecah menjadi bagian bentuk sederhana. Contoh karakter: kepala
-  (lingkaran), badan (kotak membulat), dua lengan dan dua kaki (kotak
-  membulat panjang).
-- Buat bagian induk lebih dulu (badan). Hubungkan bagian lain dengan
-  atur_induk {id: "baru2", induk_id: "baru1"} supaya ikut bergerak.
-- Anggota badan berayun dari sendinya: geser poros_x dan poros_y ke
-  sendi (bahu atau pinggul), lalu beri keyframe rotasi bolak-balik
-  (misalnya -30 dan 30 derajat) pada waktu berselang-seling.
+- Karakter, hewan, dan benda berbentuk bebas: gambar dengan tambah_svg
+  (lihat MENGGAMBAR DENGAN SVG). Bentuk geometris sederhana: tambah_layer
+  bentuk.
+- Anggota badan berayun dari sendinya: pasang titik putar dengan
+  atur_sendi, lalu beri keyframe rotasi bolak-balik (misalnya -26 dan 26
+  derajat) pada waktu berselang-seling.
 - Gerak berulang (berjalan, berputar, berdenyut): tulis cukup keyframe
   untuk beberapa siklus penuh, minimal selama durasi layer.
 - Jangan menolak karena objeknya rumit. Sederhanakan menjadi bentuk
@@ -488,11 +487,19 @@ drawingprogress | Drawing Progress | stylize
 stroketaper | Stroke Taper | stylize
 """
 
-    /** Versi ringkas tanpa tabel parameter dan daftar efek (sekitar separuh ukuran) untuk penyedia yang batas tokennya kecil. */
+    private val potong: Int = dasar.indexOf("PARAMETER EFEK (efek |")
+
+    /** Prompt lengkap: aturan, pedoman SVG dan animasi, lalu tabel parameter dan daftar efek. */
+    val sistem: String = if (potong > 0) {
+        dasar.substring(0, potong).trimEnd() + "\n\n" + AiPromptSvg.bagian + "\n\n" + dasar.substring(potong)
+    } else {
+        dasar + "\n\n" + AiPromptSvg.bagian
+    }
+
+    /** Versi ringkas tanpa tabel parameter dan daftar efek, untuk penyedia yang batas tokennya kecil. */
     val ringan: String by lazy {
-        val cut = sistem.indexOf("PARAMETER EFEK (efek |")
-        val head = if (cut > 0) sistem.substring(0, cut).trimEnd() else sistem
-        head + "\n\nCATATAN MODE RINGAN: tabel PARAMETER EFEK dan DAFTAR EFEK tidak disertakan. " +
+        val head = if (potong > 0) dasar.substring(0, potong).trimEnd() else dasar
+        head + "\n\n" + AiPromptSvg.bagian + "\n\nCATATAN MODE RINGAN: tabel PARAMETER EFEK dan DAFTAR EFEK tidak disertakan. " +
             "Sebelum memakai efek, selalu panggil cari_efek untuk menemukan id-nya dan info_efek untuk parameternya. Jangan menebak id atau parameter efek."
     }
 }
