@@ -24,7 +24,7 @@ internal object AiExtra {
         "pilih", "kelompokkan", "bongkar_grup", "topeng_pemotong", "balik",
         "atur_volume", "ekstrak_audio", "atur_kecepatan", "bekukan_frame", "putar_mundur",
         "bookmark", "salin_keyframe", "tempel_keyframe",
-    )
+    ) + AiSvg.NAMES
 
     class Outcome(val ringkasan: String, val dibuat: Long? = null)
 
@@ -43,6 +43,7 @@ internal object AiExtra {
             "bookmark" -> bookmark(editor, item)
             "salin_keyframe" -> salinKeyframe(editor, item)
             "tempel_keyframe" -> tempelKeyframe(editor, item)
+            "tambah_svg", "atur_sendi" -> AiSvg.run(editor, item)
             else -> throw IllegalArgumentException("Aksi '$name' tidak dikenal")
         }
     }
