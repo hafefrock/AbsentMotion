@@ -1,5 +1,11 @@
 package app.absentmotion.ui.editor
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -10,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -29,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.absentmotion.ai.AiConfig
@@ -73,6 +81,14 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
     var turns by remember { mutableStateOf(AiGemini.conversation.countFor(state)) }
     var job by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
+    var history by remember { mutableStateOf(AiConfig.history(context)) }
+    var undoTarget by remember { mutableStateOf<Any?>(null) }
+    val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty().trim()
+            if (spoken.isNotEmpty()) request = if (request.isBlank()) spoken else request.trim() + " " + spoken
+        }
+    }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Am.OnDark,
@@ -102,16 +118,22 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                     }
                     Spacer(Modifier.height(8.dp))
                     if (request.isBlank() && message.isBlank() && !busy) {
+                        Text(
+                            if (history.isEmpty()) "Contoh (ketuk untuk memakai):" else "Riwayat dan contoh (ketuk untuk memakai):",
+                            color = Am.OnDark.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                        )
+                        Spacer(Modifier.height(4.dp))
                         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                            for (example in AiExamples) {
+                            for (example in (history + AiExamples.filter { it !in history }).take(10)) {
                                 Box(
-                                    Modifier.padding(end = 6.dp)
+                                    Modifier.padding(end = 6.dp).widthIn(max = 240.dp)
                                         .clip(RoundedCornerShape(16.dp))
                                         .border(1.dp, Am.Accent.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
                                         .clickable { request = example }
                                         .padding(horizontal = 10.dp, vertical = 6.dp),
                                 ) {
-                                    Text(example, color = Am.Accent, fontSize = 12.sp)
+                                    Text(example, color = Am.Accent, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }
@@ -125,6 +147,26 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                         colors = fieldColors,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    Row(Modifier.fillMaxWidth()) {
+                        TextButton({
+                            try {
+                                speech.launch(
+                                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                                        .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+                                        .putExtra(RecognizerIntent.EXTRA_PROMPT, "Ucapkan perintah"),
+                                )
+                            } catch (_: ActivityNotFoundException) {
+                                message = "Pengenalan suara tidak tersedia di HP ini."
+                            }
+                        }) { Text("🎤 Bicara", color = Am.Accent, fontSize = 12.sp) }
+                        if (history.isNotEmpty()) {
+                            TextButton({
+                                AiConfig.clearHistory(context)
+                                history = emptyList()
+                            }) { Text("Hapus riwayat", color = Am.Accent, fontSize = 12.sp) }
+                        }
+                    }
                     if (busy) {
                         Spacer(Modifier.height(8.dp))
                         Text(progress.ifBlank { "Memproses..." }, color = Am.Accent, fontSize = 14.sp)
@@ -144,6 +186,28 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                             skipped = emptyList()
                         }) { Text("Percakapan baru", color = Am.Accent, fontSize = 12.sp) }
                     }
+                    if (!busy && undoTarget != null && state.scene.node != undoTarget) {
+                        TextButton({
+                            val target = undoTarget
+                            var steps = 0
+                            while (steps < 60 && state.scene.node != target) {
+                                val before = state.scene.node
+                                state.undo()
+                                steps++
+                                if (state.scene.node == before) break
+                            }
+                            message = if (state.scene.node == target) {
+                                "Permintaan diurungkan ($steps langkah)."
+                            } else {
+                                "Belum bisa dikembalikan sepenuhnya ($steps langkah). Pakai tombol undo editor."
+                            }
+                            applied = emptyList()
+                            skipped = emptyList()
+                            undoTarget = null
+                            AiGemini.conversation.reset()
+                            turns = 0
+                        }) { Text("Urungkan permintaan ini", color = Am.Accent, fontSize = 12.sp) }
+                    }
                 }
             }
         },
@@ -157,6 +221,7 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                         message = ""
                         applied = emptyList()
                         skipped = emptyList()
+                        undoTarget = state.scene.node
                         job = scope.launch {
                             AiGemini.remote = remote
                             val result = AiGemini.run(state, key, model, thinking, vision, context.cacheDir, text) { progress = it }
@@ -170,6 +235,11 @@ private fun AiAssistantDialog(state: EditorState, onClose: () -> Unit) {
                                 skipped = outcome.dilewati
                                 if (outcome.dilewati.isEmpty()) request = ""
                             }
+                            if (result.galat == null) {
+                                AiConfig.addHistory(context, text)
+                                history = AiConfig.history(context)
+                            }
+                            if (state.scene.node == undoTarget) undoTarget = null
                             turns = AiGemini.conversation.countFor(state)
                             job = null
                         }

@@ -70,6 +70,20 @@ object AiConfig {
         prefs(context).edit().putBoolean("vision", on).apply()
     }
 
+    fun history(context: Context): List<String> =
+        prefs(context).getString("history", "").orEmpty().split('\u0001').filter { it.isNotBlank() }
+
+    fun addHistory(context: Context, text: String) {
+        val clean = text.trim().replace('\u0001', ' ')
+        if (clean.isEmpty()) return
+        val list = (listOf(clean) + history(context).filter { it != clean }).take(15)
+        prefs(context).edit().putString("history", list.joinToString("\u0001")).apply()
+    }
+
+    fun clearHistory(context: Context) {
+        prefs(context).edit().remove("history").apply()
+    }
+
     fun cleanModel(model: String): String =
         model.trim().removePrefix("models/").filter { it.isLetterOrDigit() || it == '-' || it == '.' || it == '_' }
 }
