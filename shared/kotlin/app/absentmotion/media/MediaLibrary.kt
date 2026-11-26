@@ -25,6 +25,7 @@ import app.absentmotion.platform.readAtMost
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -146,19 +147,61 @@ internal fun modelFiles(resolver: ContentResolver, uri: String): Pair<ByteArray,
     require(file.length() <= MAX_MODEL_BYTES) { "the model file is too large" }
     val folder = file.parentFile!!.canonicalFile
     return file.readBytes() to { name ->
-        java.io.File(folder, name.substringAfterLast('/').substringAfterLast('\\')).canonicalFile.takeIf { it.parentFile == folder && it.isFile && it.length() <= MAX_MODEL_BYTES }?.readBytes()
+        companionName(name, folder.list()?.toList().orEmpty())?.let { java.io.File(folder, it).canonicalFile }
+            ?.takeIf { it.parentFile == folder && it.isFile && it.length() <= MAX_MODEL_BYTES }?.readBytes()
     }
 }
 
+class ModelFacts(val materials: List<ModelMaterial>, val bones: List<ModelBone>, val pictures: List<Bitmap?>)
+
+object ModelFactsCache {
+    val known = kotlinx.coroutines.flow.MutableStateFlow<Map<String, ModelFacts>>(emptyMap())
+
+    fun put(key: String, facts: ModelFacts) = known.update { old -> (old - key + (key to facts)).entries.toList().takeLast(24).associate { it.key to it.value } }
+}
+
+private const val MODEL_THUMB = 96
+
 internal fun loadModel(resolver: ContentResolver, uri: String, limit: Int, budget: Int = ModelDetail.budget.value): Pair<Mesh, List<Bitmap?>>? = try {
-    val (bytes, open) = modelFiles(resolver, modelSource(uri))
-    val mesh = decimated(parseModel(uri.substringAfterLast('/'), bytes, open, modelSkinned(uri)), budget)
+    val source = modelSource(uri)
+    val (bytes, open) = modelFiles(resolver, source)
+    val mesh = decimated(parseModel(source.substringAfterLast('/'), bytes, open, modelSkinned(uri), modelLooks(uri)), budget)
     Log.i("AMMedia", "model $uri ${mesh.triangleCount} triangles ${mesh.textures.size} pictures")
-    mesh to mesh.textures.map { decodeBytes(it, limit) }
+    val pictures = mesh.textures.map { decodeBytes(it, limit) }
+    ModelFactsCache.put(uri, ModelFacts(mesh.materials, mesh.skin?.bones.orEmpty(), pictures.map { picture ->
+        picture?.let { val k = minOf(1f, MODEL_THUMB.toFloat() / maxOf(it.width, it.height)); Bitmap.createScaledBitmap(it, (it.width * k).toInt().coerceAtLeast(1), (it.height * k).toInt().coerceAtLeast(1), true).let { thumb -> if (thumb === it) it.copy(Bitmap.Config.ARGB_8888, false) else thumb } }
+    }))
+    mesh to pictures
 } catch (e: Exception) {
     Log.w("AMMedia", "cannot read model $uri", e)
     null
 } catch (_: OutOfMemoryError) { null }
+
+internal const val MODEL_PICTURE_PREFIX = "texture-"
+
+internal fun modelPictureName(picked: String, taken: Collection<String>): String {
+    val clean = modelFileName(picked).replace(Regex("[^A-Za-z0-9._-]"), "_").takeLast(80).trimStart('.').ifEmpty { "picture.png" }
+    val name = if ('.' in clean) clean else "$clean.png"
+    val lower = taken.mapTo(HashSet()) { it.lowercase() }
+    return generateSequence(1) { it + 1 }.map { if (it == 1) MODEL_PICTURE_PREFIX + name else "$MODEL_PICTURE_PREFIX$it~$name" }.first { it.lowercase() !in lower }
+}
+
+internal fun modelPictureShown(stored: String): String = Regex("^${MODEL_PICTURE_PREFIX}(\\d+~)?").replace(stored, "")
+
+internal fun copyModelPicture(resolver: ContentResolver, folder: java.io.File, uri: Uri, picked: String): String? {
+    val name = modelPictureName(picked, folder.list()?.toList().orEmpty())
+    val target = java.io.File(folder, name)
+    return try {
+        val size = resolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } } ?: return null
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(target.path, bounds)
+        if (size <= MAX_MODEL_BYTES && bounds.outWidth > 0 && bounds.outHeight > 0) name else { target.delete(); null }
+    } catch (e: Exception) {
+        Log.w("AMMedia", "cannot copy picture $uri", e)
+        target.delete()
+        null
+    }
+}
 
 private fun decodeBytes(bytes: ByteArray, limit: Int): Bitmap? = try {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -186,6 +229,11 @@ internal fun exifTag(resolver: ContentResolver, uri: Uri): Int = runCatching {
     resolver.openInputStream(uri)?.use { ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }
 }.getOrNull() ?: ExifInterface.ORIENTATION_NORMAL
 
+internal object MediaLibrarySource {
+    @Volatile var linkedMedia: ((Context) -> List<DeviceMedia>)? = null
+    val revision = kotlinx.coroutines.flow.MutableStateFlow(0)
+}
+
 data class DeviceMedia(val uri: Uri, val name: String, val albumId: String, val album: String,
                        val video: Boolean, val durationMs: Long, val date: Long, val modified: Long, val svg: Boolean = false)
 
@@ -204,8 +252,13 @@ suspend fun deviceMedia(context: Context, demoOnly: Boolean = false): List<Devic
             }
         } catch (_: Exception) { }
     }
+    MediaLibrarySource.linkedMedia?.invoke(context)?.let { linked ->
+        val known = found.mapTo(HashSet()) { it.name to it.modified }
+        found += linked.filterNot { it.name to it.modified in known }
+    }
     refreshThumbnailVersions(found)
-    found.filter { !demoOnly || it.album.contains("demo", ignoreCase = true) }.sortedWith(compareByDescending<DeviceMedia> { it.date }.thenByDescending { it.uri.lastPathSegment?.toLongOrNull() ?: 0 })
+    found.filter { !demoOnly || it.album.contains("demo", ignoreCase = true) }
+        .sortedWith(compareByDescending<DeviceMedia> { it.date }.thenByDescending { it.uri.lastPathSegment?.toLongOrNull() ?: 0L }.thenBy { it.name })
 }
 
 private val thumbnailCache = object : android.util.LruCache<String, Bitmap>(12 * 1024 * 1024) {
@@ -226,22 +279,36 @@ private fun refreshThumbnailVersions(files: List<DeviceMedia>) {
 
 fun cachedMediaThumbnail(uri: Uri): Bitmap? = thumbnailCache.get(uri.toString())
 
-suspend fun mediaThumbnail(context: Context, uri: Uri): Bitmap? = withContext(Dispatchers.IO) {
+suspend fun mediaThumbnail(context: Context, uri: Uri, video: Boolean? = null): Bitmap? = withContext(Dispatchers.IO) {
     val key = uri.toString()
     thumbnailLocks[key.hashCode().mod(thumbnailLocks.size)].withLock {
         cachedMediaThumbnail(uri) ?: try {
-            val system = try { thumbnail(context.contentResolver, uri) } catch (_: java.io.IOException) { null }
-            (system ?: if ("video" in uri.pathSegments) firstFrame(context, uri, 272) else null)?.also { thumbnailCache.put(key, it) }
+            val isVideo = video ?: ("video" in uri.pathSegments || context.contentResolver.getType(uri)?.startsWith("video/") == true)
+            val system = try { thumbnail(context.contentResolver, uri, isVideo) } catch (_: Exception) { null }
+            (system ?: fallbackThumbnail(context, uri, isVideo))?.also { thumbnailCache.put(key, it) }
         } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
     }
 }
 
-private fun thumbnail(resolver: ContentResolver, uri: Uri): Bitmap? {
+private fun thumbnail(resolver: ContentResolver, uri: Uri, isVideo: Boolean): Bitmap? {
     if (Build.VERSION.SDK_INT >= 29) return resolver.loadThumbnail(uri, Size(272, 272), null)
+    if (uri.authority != "media") return null
     val id = ContentUris.parseId(uri)
     @Suppress("DEPRECATION")
-    return if ("video" in uri.pathSegments) MediaStore.Video.Thumbnails.getThumbnail(resolver, id, MediaStore.Video.Thumbnails.MINI_KIND, null)
+    return if (isVideo) MediaStore.Video.Thumbnails.getThumbnail(resolver, id, MediaStore.Video.Thumbnails.MINI_KIND, null)
         else MediaStore.Images.Thumbnails.getThumbnail(resolver, id, MediaStore.Images.Thumbnails.MINI_KIND, null)
+}
+
+private fun fallbackThumbnail(context: Context, uri: Uri, isVideo: Boolean): Bitmap? {
+    if (isVideo) return firstFrame(context, uri, 272)
+    val mime = context.contentResolver.getType(uri)
+    if (mime == "image/svg+xml" || uri.lastPathSegment.orEmpty().endsWith(".svg", ignoreCase = true)) return null
+    val decoded = decodePicture(context.contentResolver, uri, 272) ?: return null
+    val turn = exifOrientation(exifTag(context.contentResolver, uri)).first
+    if (turn == 0) return decoded
+    val rotated = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply { setRotate(turn.toFloat()) }, false)
+    if (rotated !== decoded) decoded.recycle()
+    return rotated
 }
 
 suspend fun imageDeclaration(context: Context, uri: Uri): MediaDeclaration? = withContext(Dispatchers.IO) {

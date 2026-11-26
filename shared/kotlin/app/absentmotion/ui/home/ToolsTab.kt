@@ -1,11 +1,22 @@
 package app.absentmotion.ui.home
 
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.zIndex
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.foundation.gestures.scrollBy
+import kotlin.math.abs
 import android.content.ClipboardManager
 import android.net.Uri
 import android.os.Environment
 import androidx.annotation.StringRes
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.size
@@ -40,12 +52,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -58,6 +70,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.ImageBitmap
@@ -65,9 +79,12 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.LinkAnnotation
@@ -91,9 +108,14 @@ import app.absentmotion.export.formatBytes
 import app.absentmotion.library.AppSettings
 import app.absentmotion.library.ProjectStore
 import app.absentmotion.media.mediaDeclaration
+import app.absentmotion.model.MediaDeclaration
 import app.absentmotion.model.Scene
+import app.absentmotion.platform.BackHandler
+import app.absentmotion.platform.Hint
 import app.absentmotion.platform.PlatformFeatures
 import app.absentmotion.ui.editor.LocalWide
+import app.absentmotion.ui.editor.PanelIcons
+import app.absentmotion.ui.editor.effects.EffectIcons
 import app.absentmotion.platform.DialogStatusBarIcons
 import app.absentmotion.platform.LocalContext
 import app.absentmotion.platform.Toast
@@ -113,6 +135,7 @@ import app.absentmotion.tools.usualKbps
 import app.absentmotion.ui.editor.PhoneScreen
 import app.absentmotion.ui.export.ExportIcons
 import app.absentmotion.ui.theme.Am
+import app.absentmotion.ui.theme.Motion
 import app.absentmotion.ui.theme.animatedColor
 import app.absentmotion.ui.theme.withUiFont
 import kotlinx.coroutines.CancellationException
@@ -129,8 +152,61 @@ private val installScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.
 private var installPercent by mutableStateOf<Int?>(null)
 private val downloader = videoDownloader()
 
+internal val DefaultToolOrder = listOf("compress", "trim", "extract", "gif", "merge", "downloader", "enhance", "convert", "importer", "send")
+
+internal val DefaultHiddenTools = setOf("gif", "merge", "enhance", "convert", "importer")
+
+internal fun toolOrder(saved: List<String>): List<String> {
+    val valid = DefaultToolOrder.toSet()
+    val kept = saved.asSequence().map { it.trim() }.filter { it in valid }.distinct().toList()
+    return kept + DefaultToolOrder.filterNot { it in kept }
+}
+
+internal fun movedToolOrder(order: List<String>, from: Int, to: Int): List<String> {
+    if (from !in order.indices || to !in order.indices || from == to) return order
+    return order.toMutableList().apply { add(to, removeAt(from)) }
+}
+
+internal fun toolSet(saved: Collection<String>): Set<String> = saved.map { it.trim() }.filterTo(LinkedHashSet()) { it in DefaultToolOrder }
+
+internal class ToolInfo(val icon: ImageVector, val title: Int, val about: Int, val open: Int)
+
+internal fun toolInfo(id: String): ToolInfo = when (id) {
+    "compress" -> ToolInfo(HomeIcons.Compress, R.string.tools_compress, R.string.tools_compress_about, 1)
+    "trim" -> ToolInfo(HomeIcons.Trim, R.string.tools_trim, R.string.tools_trim_about, 3)
+    "extract" -> ToolInfo(HomeIcons.Audio, R.string.tools_extract, R.string.tools_extract_about, 4)
+    "gif" -> ToolInfo(HomeIcons.Gif, R.string.tools_gif, R.string.tools_gif_about, 5)
+    "merge" -> ToolInfo(HomeIcons.Merge, R.string.tools_merge, R.string.tools_merge_about, 9)
+    "downloader" -> ToolInfo(HomeIcons.Download, R.string.tools_downloader, R.string.tools_downloader_about, 2)
+    "enhance" -> ToolInfo(HomeIcons.Compress, R.string.tools_enhance_image, R.string.tools_enhance_image_about, 6)
+    "convert" -> ToolInfo(HomeIcons.ImageConvert, R.string.tools_convert_image, R.string.tools_convert_image_about, 8)
+    "importer" -> ToolInfo(HomeIcons.ProjectImporter, R.string.tools_importer, R.string.tools_importer_about, 0)
+    else -> ToolInfo(HomeIcons.Devices, R.string.tools_send, R.string.tools_send_about, 7)
+}
+
+internal fun projectTools(settings: AppSettings, importer: Boolean): List<String> = settings.projectToolOrder.filter {
+    it !in settings.projectToolsHidden && (it != "downloader" || downloader.available) && (it != "importer" || importer)
+}
+
 @Composable
-internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSettings, onOpen: (String) -> Unit) {
+internal fun ToolsCustomizeButton(onCustomize: () -> Unit, modifier: Modifier = Modifier) {
+    val label = stringResource(R.string.tools_customize)
+    val trigger: @Composable () -> Unit = {
+        Box(
+            modifier.size(if (PlatformFeatures.desktop) 36.dp else 50.dp)
+                .then(if (PlatformFeatures.desktop) Modifier.clip(RoundedCornerShape(10.dp)).deskPress(10.dp) else Modifier)
+                .clickable(role = Role.Button, onClick = onCustomize),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(app.absentmotion.ui.editor.DrawingIcons.Tune, label, Modifier.size(if (PlatformFeatures.desktop) 20.dp else 24.dp), tint = Am.Navy)
+            HoldName(label)
+        }
+    }
+    if (PlatformFeatures.desktop) Hint(label, trigger) else trigger()
+}
+
+@Composable
+internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSettings, customizing: Boolean = false, onCustomizing: (Boolean) -> Unit = {}, onImportLink: () -> Unit = {}, onOpen: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val revision by downloader.revision.collectAsState()
@@ -138,6 +214,9 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
     var open by rememberSaveable { mutableIntStateOf(0) }
     var compressFrom by remember { mutableStateOf<Uri?>(null) }
     var asking by remember { mutableStateOf(false) }
+    var adding by remember { mutableStateOf(false) }
+    val order = settings.toolOrder.filterNot { it in settings.toolsHidden }
+    val more = settings.toolOrder.filter { it in settings.toolsHidden }
     LaunchedEffect(revision) {
         if (engine !is Engine.Getting) engine = if (!downloader.available) Engine.Unavailable else if (downloader.installed(context)) Engine.Ready else Engine.Missing
     }
@@ -170,46 +249,35 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
             }
         }
     }
-    val compressCard: @Composable (Modifier) -> Unit = { m ->
-        ToolCard(HomeIcons.Compress, stringResource(R.string.tools_compress), stringResource(R.string.tools_compress_about), modifier = m) { compressFrom = null; open = 1 }
-    }
-    val trimCard: @Composable (Modifier) -> Unit = { m ->
-        ToolCard(HomeIcons.Trim, stringResource(R.string.tools_trim), stringResource(R.string.tools_trim_about), modifier = m) { open = 3 }
-    }
-    val extractCard: @Composable (Modifier) -> Unit = { m ->
-        ToolCard(HomeIcons.Audio, stringResource(R.string.tools_extract), stringResource(R.string.tools_extract_about), modifier = m) { open = 4 }
-    }
-    val gifCard: @Composable (Modifier) -> Unit = { m ->
-        ToolCard(HomeIcons.Gif, stringResource(R.string.tools_gif), stringResource(R.string.tools_gif_about), modifier = m) { open = 5 }
-    }
-    val enhanceCard: @Composable (Modifier) -> Unit = { m ->
-        ToolCard(HomeIcons.Compress, stringResource(R.string.tools_enhance_image), stringResource(R.string.tools_enhance_image_about), modifier = m) { open = 6 }
-    }
-    val downloaderCard: @Composable (Modifier) -> Unit = { m ->
-        ToolCard(HomeIcons.Download, stringResource(R.string.tools_downloader), stringResource(R.string.tools_downloader_about), engine = engine, modifier = m) {
-            when {
-                engine is Engine.Getting -> Unit
-                !downloader.available || downloader.installed(context) -> open = 2
-                else -> asking = true
+    val cardFor: @Composable (String, Modifier) -> Unit = { id, m ->
+        val tool = toolInfo(id)
+        ToolCard(tool.icon, stringResource(tool.title), stringResource(tool.about), engine = engine.takeIf { id == "downloader" }, modifier = m) {
+            when (id) {
+                "downloader" -> when {
+                    engine is Engine.Getting -> Unit
+                    !downloader.available || downloader.installed(context) -> open = 2
+                    else -> asking = true
+                }
+                "importer" -> onImportLink()
+                else -> { compressFrom = null; open = tool.open }
             }
         }
     }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = if (PlatformFeatures.desktop) 28.dp else 16.dp)) {
-        Spacer(Modifier.height(24.dp))
-        if (PlatformFeatures.desktop) ToolGrid(listOf(compressCard, trimCard, extractCard, gifCard, downloaderCard, enhanceCard))
-        else if (LocalWide.current || app.absentmotion.ui.editor.LocalTablet.current) ToolGrid(listOf(compressCard, trimCard, extractCard, gifCard, downloaderCard, enhanceCard))
-        else {
-            compressCard(Modifier)
-            Spacer(Modifier.height(12.dp))
-            trimCard(Modifier)
-            Spacer(Modifier.height(12.dp))
-            extractCard(Modifier)
-            Spacer(Modifier.height(12.dp))
-            gifCard(Modifier)
-            Spacer(Modifier.height(12.dp))
-            downloaderCard(Modifier)
-            Spacer(Modifier.height(12.dp))
-            enhanceCard(Modifier)
+        if (PlatformFeatures.desktop) {
+            Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 12.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                ToolsCustomizeButton({ onCustomizing(true) })
+            }
+        } else {
+            Spacer(Modifier.height(24.dp))
+        }
+        if (PlatformFeatures.desktop || LocalWide.current || app.absentmotion.ui.editor.LocalTablet.current) ToolGrid(order, cardFor)
+        else Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            order.forEach { id -> key(id) { cardFor(id, Modifier) } }
+        }
+        if (more.isNotEmpty()) {
+            Spacer(Modifier.height(if (order.isEmpty()) 0.dp else 12.dp))
+            AddMoreTools { adding = true }
         }
         Spacer(Modifier.height(28.dp))
         ToolsFooter()
@@ -217,8 +285,8 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
             onDismissRequest = { asking = false },
             title = { Text(stringResource(R.string.tools_downloader), color = Am.Navy) },
             text = { Text(stringResource(R.string.tools_downloader_intro, (downloader.downloadBytes / (1024f * 1024f)).roundToInt()), color = Am.Navy) },
-            confirmButton = { TextButton({ asking = false; getDownloader() }) { Text(stringResource(R.string.downloader_download), color = Am.Accent) } },
-            dismissButton = { TextButton({ asking = false }) { Text(stringResource(R.string.home_back), color = Am.Navy) } },
+            confirmButton = { DialogPill(stringResource(R.string.downloader_download)) { asking = false; getDownloader() } },
+            dismissButton = { DialogPill(stringResource(R.string.home_back), primary = false) { asking = false } },
             containerColor = Am.Card,
         )
         Spacer(Modifier.height(28.dp))
@@ -230,16 +298,64 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
         4 -> ExtractAudioScreen { open = 0 }
         5 -> GifScreen { open = 0 }
         6 -> EnhanceImageScreen { open = 0 }
+        7 -> SendScreen(store) { open = 0 }
+        8 -> ConvertImageScreen { open = 0 }
+        9 -> MergeScreen { open = 0 }
+    }
+    if (customizing) CustomizeToolsSheet(settings) { onCustomizing(false) }
+    if (adding) AddToolsSheet(settings) { adding = false }
+}
+
+@Composable
+private fun AddMoreTools(onClick: () -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(shape).background(Am.HomeAccent.copy(alpha = 0.1f)).border(1.5.dp, Am.HomeAccent.copy(alpha = 0.55f), shape)
+            .deskPress(12.dp).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(HomeIcons.Plus, null, Modifier.size(22.dp), tint = Am.HomeAccent)
+        Spacer(Modifier.width(10.dp))
+        Text(stringResource(R.string.tools_add_more), color = Am.HomeAccent, fontSize = 17.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
-private fun ToolGrid(cards: List<@Composable (Modifier) -> Unit>) = BoxWithConstraints(Modifier.fillMaxWidth()) {
+private fun AddToolsSheet(settings: AppSettings, onClose: () -> Unit) {
+    val hidden = settings.toolOrder.filter { it in settings.toolsHidden }
+    LaunchedEffect(hidden.isEmpty()) { if (hidden.isEmpty()) onClose() }
+    ToolSheet(stringResource(R.string.tools_add_more), onClose, closeButton = true) {
+        Spacer(Modifier.height(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            hidden.forEach { id ->
+                key(id) {
+                    val tool = toolInfo(id)
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Am.Card).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(44.dp).background(Am.Navy, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(tool.icon, null, Modifier.size(22.dp), tint = Am.OnNavy)
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(tool.title), color = Am.Navy, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(tool.about), color = Am.HomeDim, fontSize = 14.sp, lineHeight = 18.sp)
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        BigButton(stringResource(R.string.community_add), Modifier.widthIn(min = 72.dp)) { settings.toolsHidden = settings.toolsHidden - id }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun ToolGrid(order: List<String>, card: @Composable (String, Modifier) -> Unit) = BoxWithConstraints(Modifier.fillMaxWidth()) {
     val columns = ((maxWidth + 16.dp) / 336.dp).toInt().coerceIn(1, 3)
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        cards.chunked(columns).forEach { row ->
+        order.chunked(columns).forEach { row ->
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                row.forEach { it(Modifier.weight(1f).fillMaxHeight()) }
+                row.forEach { id -> key(id) { card(id, Modifier.weight(1f).fillMaxHeight()) } }
                 repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
@@ -247,10 +363,19 @@ private fun ToolGrid(cards: List<@Composable (Modifier) -> Unit>) = BoxWithConst
 }
 
 @Composable
-private fun ToolCard(icon: ImageVector, title: String, about: String, engine: Engine? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun ToolCard(
+    icon: ImageVector,
+    title: String,
+    about: String,
+    engine: Engine? = null,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     val missing = engine == Engine.Missing || engine is Engine.Getting || engine is Engine.Failed
     Row(
-        modifier.fillMaxWidth().heightIn(min = 104.dp).clip(RoundedCornerShape(12.dp)).background(Am.Card).deskPress(12.dp).clickable(onClick = onClick).padding(16.dp),
+        modifier.fillMaxWidth().heightIn(min = 104.dp).clip(RoundedCornerShape(12.dp)).background(Am.Card)
+            .deskPress(12.dp).clickable(onClick = onClick)
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(56.dp).alpha(if (missing) 0.45f else 1f).background(Am.Navy, CircleShape), contentAlignment = Alignment.Center) {
@@ -627,7 +752,7 @@ internal fun DownloaderScreen(store: ProjectStore, settings: AppSettings, onOpen
             onDismissRequest = { why = null },
             title = { Text(site.title, color = Am.Navy) },
             text = { Text(stringResource(reason), color = Am.Navy) },
-            confirmButton = { TextButton({ why = null }) { Text(stringResource(R.string.ok), color = Am.Navy) } },
+            confirmButton = { DialogPill(stringResource(R.string.ok)) { why = null } },
             containerColor = Am.Card,
         )
     }
@@ -839,16 +964,20 @@ private suspend fun projectFrom(context: android.content.Context, store: Project
     val media = mediaDeclaration(context, saved.uri) ?: error("unreadable")
     val id = withContext(Dispatchers.IO) { store.newId() }
     val kept = keepCopy(context, settings, store, id, media, null)
-    val turned = kept.orientation % 180 != 0
-    val width = if (turned) kept.height else kept.width
-    val height = if (turned) kept.width else kept.height
+    val scene = mediaProject(saved.name.substringBeforeLast('.').take(60), kept)
+    val layer = (if (saved.video) scene.videoLayer(kept, 0) else scene.imageLayer(kept, 0, settings.defaultLayerDuration)) ?: error("no layer")
+    withContext(Dispatchers.IO) { store.save(id, scene.add(layer, listOf(kept))) }
+    return id
+}
+
+internal fun mediaProject(title: String, media: MediaDeclaration): Scene {
+    val turned = media.orientation % 180 != 0
+    val width = if (turned) media.height else media.width
+    val height = if (turned) media.width else media.height
     check(width > 0 && height > 0)
     val scale = minOf(1.0, 3840.0 / maxOf(width, height))
     val w = ((width * scale).roundToInt() / 2 * 2).coerceAtLeast(32)
     val h = ((height * scale).roundToInt() / 2 * 2).coerceAtLeast(32)
-    val fps = (kept.fps ?: 30f).roundToInt().coerceIn(12, 60)
-    val scene = Scene.create(saved.name.substringBeforeLast('.').take(60), w, h, fps, 0xFF000000.toInt())
-    val layer = (if (saved.video) scene.videoLayer(kept, 0) else scene.imageLayer(kept, 0, settings.defaultLayerDuration)) ?: error("no layer")
-    withContext(Dispatchers.IO) { store.save(id, scene.add(layer, listOf(kept))) }
-    return id
+    val fps = (media.fps ?: 30f).roundToInt().coerceIn(12, 60)
+    return Scene.create(title, w, h, fps, 0xFF000000.toInt())
 }

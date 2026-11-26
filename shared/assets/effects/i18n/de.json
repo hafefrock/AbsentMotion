@@ -120,7 +120,7 @@
      "label": "Auf Ebene maskieren"
     },
     "mix": {
-     "label": "Mischen"
+     "label": "Füllung"
     },
     "spill": {
      "label": "Effekte über Rand hinaus"
@@ -429,6 +429,13 @@
    "params": {
     "frequency": {
      "label": "Frequenz"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -500,14 +507,25 @@
    "description": "Eine weiche, gleichmäßige Unschärfe. Mit „Form: Rechteck“ wird stattdessen ein gleichmäßiges Quadrat um jeden Punkt gemittelt.",
    "name": "Unschärfe",
    "params": {
-    "strength": {
-     "label": "Stärke"
+    "iterations": {
+     "label": "Durchläufe"
     },
     "shape": {
      "label": "Form",
      "options": [
       "Weich",
-      "Rechteck"
+      "Rechteck",
+      "Schneller Boxfilter"
+     ]
+    },
+    "strength": {
+     "label": "Stärke"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -679,6 +697,45 @@
     }
    }
   },
+  "cartoon": {
+   "description": "Fasst die Farben zu wenigen Stufen zusammen und zeichnet Umrisse, wo sich das Bild stark ändert. Stärke legt fest, wie viele Kanten einen Umriss bekommen.",
+   "name": "Cartoon",
+   "params": {
+    "strength": {
+     "label": "Stärke"
+    },
+    "color": {
+     "label": "Umrissfarbe"
+    }
+   }
+  },
+  "channelmixer": {
+   "description": "Baut das Bild aus seinem Rot-, Grün- und Blaukanal neu auf: Jeder Kanal fügt seine eigene Farbe hinzu, dann biegt Gamma jeden Kanal und Versatz hebt oder senkt alle.",
+   "name": "Kanalmixer",
+   "params": {
+    "red": {
+     "label": "Rot"
+    },
+    "green": {
+     "label": "Grün"
+    },
+    "blue": {
+     "label": "Blau"
+    },
+    "gammaRed": {
+     "label": "Rot-Gamma"
+    },
+    "gammaGreen": {
+     "label": "Grün-Gamma"
+    },
+    "gammaBlue": {
+     "label": "Blau-Gamma"
+    },
+    "offset": {
+     "label": "Versatz"
+    }
+   }
+  },
   "channelremap": {
    "description": "Erstellt jeden Farbkanal aus einem anderen Kanal der Ebene, etwa für Falschfarben oder um Luminanz nach Alpha zu übertragen.",
    "name": "Kanalzuordnung (RGB)",
@@ -686,49 +743,49 @@
     "a": {
      "label": "A",
      "options": [
-      "Rot",
-      "Grün",
-      "Blau",
-      "Alpha",
-      "Luminanz",
-      "Null",
-      "Voll"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "b": {
      "label": "B",
      "options": [
-      "Rot",
-      "Grün",
-      "Blau",
-      "Alpha",
-      "Luminanz",
-      "Null",
-      "Voll"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "g": {
      "label": "G",
      "options": [
-      "Rot",
-      "Grün",
-      "Blau",
-      "Alpha",
-      "Luminanz",
-      "Null",
-      "Voll"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "r": {
      "label": "R",
      "options": [
-      "Rot",
-      "Grün",
-      "Blau",
-      "Alpha",
-      "Luminanz",
-      "Null",
-      "Voll"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     }
    }
@@ -740,49 +797,49 @@
     "a": {
      "label": "A",
      "options": [
-      "Farbton",
-      "Sättigung",
-      "Hellwert",
-      "Alpha",
-      "Luminanz",
-      "Null",
-      "Voll"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "h": {
      "label": "H",
      "options": [
-      "Farbton",
-      "Sättigung",
-      "Wert",
-      "Alpha",
-      "Luminanz",
-      "Null",
-      "Voll"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "s": {
      "label": "S",
      "options": [
-      "Farbton",
-      "Sättigung",
-      "Wert",
-      "Alpha",
-      "Luminanz",
-      "Null",
-      "Voll"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "v": {
      "label": "V",
      "options": [
-      "Farbton",
-      "Sättigung",
-      "Hellwert",
-      "Alpha",
-      "Luminanz",
-      "Null",
-      "Voll"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     }
    }
@@ -797,7 +854,7 @@
     "color": {
      "label": "Farbe"
     },
-    "count": {
+    "cells": {
      "label": "Anzahl"
     },
     "offset": {
@@ -832,6 +889,16 @@
     },
     "tolerance": {
      "label": "Toleranz"
+    },
+    "luma": {
+     "label": "Luma-Gewichtung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -850,6 +917,13 @@
      "options": [
       "Linear",
       "Strahlen"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -881,6 +955,13 @@
      "options": [
       "Ebene",
       "Bildschirm"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -949,8 +1030,26 @@
     }
    }
   },
+  "coloradjust": {
+   "description": "Passt Helligkeit, Kontrast, Sättigung und Dynamik in einem Schritt an; Dynamik verstärkt vor allem die blasseren Farben.",
+   "name": "Farbanpassung",
+   "params": {
+    "brightness": {
+     "label": "Helligkeit"
+    },
+    "contrast": {
+     "label": "Kontrast"
+    },
+    "saturation": {
+     "label": "Sättigung"
+    },
+    "vibrance": {
+     "label": "Dynamik"
+    }
+   }
+  },
   "colorbalance": {
-   "description": "Verschiebt Schatten, Mitteltöne und Lichter zu ihren jeweiligen Farben; Grau lässt den Bereich unverändert.",
+   "description": "Verschiebt Schatten, Mitteltöne und Lichter zu ihren jeweiligen Farben; Grau lässt den Bereich unverändert. Helligkeit beibehalten hält die Helligkeit jedes Pixels, während sich die Farben ändern.",
    "name": "Farbbalance",
    "params": {
     "amount": {
@@ -964,6 +1063,16 @@
     },
     "shadows": {
      "label": "Schatten"
+    },
+    "preserve": {
+     "label": "Helligkeit beibehalten"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -1030,7 +1139,8 @@
      "label": "Stil",
      "options": [
       "Klassisch",
-      "Nach Helligkeit"
+      "Nach Helligkeit",
+      "Standard"
      ]
     }
    }
@@ -1315,6 +1425,13 @@
       "Mitte",
       "Ecke"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -1406,6 +1523,13 @@
      "options": [
       "Mitte",
       "Ecke"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -1648,6 +1772,27 @@
     }
    }
   },
+  "difference": {
+   "description": "Zeigt, wie sich die Ebene von dem unterscheidet, was dahinter liegt, wie der Mischmodus „Differenz“, aber an dieser Stelle der Effektliste.",
+   "name": "Differenz",
+   "params": {
+    "amount": {
+     "label": "Menge"
+    }
+   }
+  },
+  "differencematte": {
+   "description": "Blendet die Teile der Ebene aus, die wie die Ebenen dahinter aussehen, sodass nur das Abweichende bleibt. Schwellenwert legt fest, wie verschieden eine Stelle sein muss, um zu bleiben, und Weiche Kante macht den Rand weicher.",
+   "name": "Differenzmaske",
+   "params": {
+    "threshold": {
+     "label": "Schwellenwert"
+    },
+    "feather": {
+     "label": "Weiche Kante"
+    }
+   }
+  },
   "directionalblur": {
    "description": "Erzeugt Bewegungsunschärfe durch Mittelung von Bildpunkten entlang eines Richtungswinkels. Mit „Ausbreitung: Beide Seiten“ verteilt sich die Unschärfe gleichmäßig nach vorn und hinten.",
    "name": "Gerichtete Unschärfe",
@@ -1701,7 +1846,8 @@
      "options": [
       "R",
       "G",
-      "B"
+      "B",
+      "Luminanz"
      ]
     },
     "ychannel": {
@@ -1709,7 +1855,15 @@
      "options": [
       "R",
       "G",
-      "B"
+      "B",
+      "Luminanz"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -1765,10 +1919,10 @@
     "phase": {
      "label": "Phase"
     },
-    "radius": {
+    "dotRadius": {
      "label": "Radius"
     },
-    "scale": {
+    "zoom": {
      "label": "Skalierung"
     },
     "seed": {
@@ -1788,11 +1942,18 @@
     },
     "start": {
      "label": "Start"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
   "dropshadow": {
-   "description": "Zeichnet hinter der Ebenenform einen weichen Schatten, der mit Versatz X und Versatz Y verschoben wird.",
+   "description": "Zeichnet hinter der Ebenenform einen weichen Schatten, der mit Versatz X und Versatz Y verschoben wird. Ausbreitung vergrößert den Schatten, bevor er ausläuft.",
    "name": "Schlagschatten",
    "params": {
     "blur": {
@@ -1809,6 +1970,9 @@
     },
     "y": {
      "label": "Versatz Y"
+    },
+    "spread": {
+     "label": "Ausbreitung"
     }
    }
   },
@@ -1837,11 +2001,11 @@
     "alpha": {
      "label": "Alpha"
     },
-    "composite": {
+    "mode": {
      "label": "Zusammensetzen",
      "options": [
-      "Dahinter",
-      "Darüber"
+      "Darüber",
+      "Dahinter"
      ]
     },
     "count": {
@@ -1849,11 +2013,18 @@
     },
     "seconds": {
      "label": "Sekunden"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
   "edgedetect": {
-   "description": "Zeigt helle Linien an Bildübergängen und dunkle Bereiche an allen anderen Stellen.",
+   "description": "Zeigt helle Linien an Bildübergängen und dunkle Bereiche an allen anderen Stellen. Tinte zeichnet dunkle Linien auf Weiß; Farbe behält an den Kanten die eigenen Farben des Bildes.",
    "name": "Kantenerkennung",
    "params": {
     "strength": {
@@ -1863,7 +2034,8 @@
      "label": "Stil",
      "options": [
       "Klassisch",
-      "Tinte"
+      "Tinte",
+      "Farbe"
      ]
     },
     "spacing": {
@@ -1919,6 +2091,19 @@
     },
     "mask": {
      "label": "Auf Ebene maskieren"
+    },
+    "smoothing": {
+     "label": "Glättung"
+    },
+    "strength": {
+     "label": "Stärke"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -2191,14 +2376,21 @@
     },
     "fadeOut": {
      "label": "Aus"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
   "feather": {
-   "description": "Macht die Alphakanten der Ebene weich. „Nach innen“ blendet innerhalb des bestehenden Umrisses aus; „Alpha weichzeichnen“ breitet die weiche Kante auch nach außen aus.",
+   "description": "Macht die Alphakanten der Ebene weich und blendet sie vom Umriss aus ein. Mehr Durchläufe ergeben einen weicheren, tieferen Übergang. Stil „Klassisch“: „Nach innen“ blendet innerhalb des bestehenden Umrisses aus; „Alpha weichzeichnen“ breitet die weiche Kante auch nach außen aus.",
    "name": "Weiche Kante",
    "params": {
-    "blur": {
+    "strength": {
      "label": "Stärke"
     },
     "mode": {
@@ -2206,6 +2398,16 @@
      "options": [
       "Nach innen",
       "Alpha weichzeichnen"
+     ]
+    },
+    "iter": {
+     "label": "Durchläufe"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -2264,6 +2466,13 @@
     },
     "tintColor": {
      "label": "Tönungsfarbe"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -2479,6 +2688,13 @@
       "Abstand",
       "Weich"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -2507,6 +2723,9 @@
     "offset": {
      "label": "Versatz"
     },
+    "parallax": {
+     "label": "Parallaxe"
+    },
     "scale": {
      "label": "Skalierung"
     },
@@ -2515,6 +2734,13 @@
     },
     "stretch": {
      "label": "Streckung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -2633,6 +2859,13 @@
     },
     "threshold3": {
      "label": "Bereich 3"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -2782,6 +3015,9 @@
       "Verlauf",
       "Spektrum"
      ]
+    },
+    "squeeze": {
+     "label": "Verengung"
     }
    }
   },
@@ -2839,6 +3075,13 @@
       "Rechteck",
       "Oval"
      ]
+    },
+    "look": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -2874,6 +3117,19 @@
     },
     "width": {
      "label": "Breite"
+    },
+    "spacing": {
+     "label": "Abstand"
+    },
+    "smoothing": {
+     "label": "Glättung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -2946,6 +3202,13 @@
     },
     "stagger": {
      "label": "Versatz"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -2998,11 +3261,18 @@
     "paper": {
      "label": "Papierfarbe"
     },
+    "phase": {
+     "label": "Phase"
+    },
+    "strength": {
+     "label": "Stärke"
+    },
     "style": {
      "label": "Stil",
      "options": [
       "Klassisch",
-      "Zweifarbig"
+      "Zweifarbig",
+      "Standard"
      ]
     }
    }
@@ -3028,6 +3298,13 @@
     },
     "strength": {
      "label": "Stärke"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -3122,6 +3399,13 @@
      "options": [
       "Mitte",
       "Ecke"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -3484,6 +3768,13 @@
       "Mitte",
       "Ecke"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -3628,11 +3919,30 @@
    }
   },
   "innerbulge": {
-   "description": "Wölbt die Mitte der Ebene nach außen oder zieht sie nach innen, während ihre Ränder an Ort und Stelle bleiben.",
+   "description": "Wölbt die Ebene innerhalb eines Kreises mit Radius um Mitte nach außen oder zieht sie nach innen, während ihre Ränder an Ort und Stelle bleiben. Weiche Kante bestimmt, wie weit von den Rändern entfernt sich die Ebene zu bewegen beginnt; Gauß hält die Mitte gleichmäßig vergrößert und lässt den Effekt kürzer auslaufen.",
    "name": "Innen zusammenziehen/wölben",
    "params": {
     "strength": {
      "label": "Stärke"
+    },
+    "center": {
+     "label": "Mitte"
+    },
+    "radius": {
+     "label": "Radius"
+    },
+    "feather": {
+     "label": "Weiche Kante"
+    },
+    "gaussian": {
+     "label": "Gauß"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -3664,6 +3974,13 @@
      "options": [
       "Rund",
       "Eckig"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -3768,6 +4085,13 @@
     },
     "sweep": {
      "label": "Winkel"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -3837,6 +4161,13 @@
     },
     "mask": {
      "label": "Auf Ebene maskieren"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -3936,6 +4267,13 @@
     },
     "seed": {
      "label": "Zufallswert"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -4048,6 +4386,13 @@
     },
     "high": {
      "label": "Oberer Schwellenwert"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -4215,6 +4560,9 @@
     "inset": {
      "label": "Nach innen/außen"
     },
+    "legacyCoordinates": {
+     "label": "Alte Koordinaten"
+    },
     "offset": {
      "label": "Versatz"
     },
@@ -4226,6 +4574,13 @@
     },
     "rotate": {
      "label": "Automatisch drehen"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -4361,7 +4716,7 @@
    "description": "Verschiebt das Bild der Ebene und setzt es an den Rändern gegenüberliegend fort.",
    "name": "Versatz",
    "params": {
-    "feather": {
+    "seamFeather": {
      "label": "Weiche Kante"
     },
     "mask": {
@@ -4369,6 +4724,13 @@
     },
     "offset": {
      "label": "Versatz"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -4453,12 +4815,12 @@
      "label": "Umgebungslicht"
     },
     "amount": {
-     "label": "Rauheit"
+     "label": "Menge"
     },
     "blend": {
      "label": "Überblendung"
     },
-    "blur": {
+    "bevel": {
      "label": "Abschrägung"
     },
     "color": {
@@ -4480,7 +4842,7 @@
      "label": "Intensität"
     },
     "light": {
-     "label": "Lichtfarbe"
+     "label": "Farbe"
     },
     "refraction": {
      "label": "Lichtbrechung"
@@ -4489,7 +4851,7 @@
      "label": "Glättungs-Samples"
     },
     "scale": {
-     "label": "Rauheitsskalierung"
+     "label": "Skalierung"
     },
     "seed": {
      "label": "Zufallswert"
@@ -4546,6 +4908,26 @@
     }
    }
   },
+  "outline": {
+   "description": "Zeichnet einen festen Umriss um die Außenseite der Ebenenform: Farbe legt seine Farbe fest, Breite seine Stärke in Pixeln.",
+   "name": "Umriss",
+   "params": {
+    "radius": {
+     "label": "Breite"
+    },
+    "color": {
+     "label": "Farbe"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Umriss",
+      "Füllen",
+      "Bänder"
+     ]
+    }
+   }
+  },
   "pagecurl": {
    "description": "Blättert die Ebene wie eine Seite um: Eine Ecke hebt und rollt sich um und zeigt die Rückseite. Animiere den Fortschritt, um die Seite umzublättern. Mit „Form folgen“ wird die Seite an den Rändern des Sichtbaren umgeblättert, sodass sich ein rundes Bild oder ein 3D-Modell an seinem eigenen Rand einrollt statt an einem unsichtbaren Rechteck.",
    "name": "Seitenumblättern",
@@ -4573,6 +4955,20 @@
     },
     "shine": {
      "label": "Glanz"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
+    },
+    "roll": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -4920,8 +5316,18 @@
     "stretch": {
      "label": "Streckung"
     },
+    "threshold": {
+     "label": "Schwellenwert"
+    },
     "vignette": {
      "label": "Vignette"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5030,6 +5436,16 @@
       "Oberkante in der Mitte",
       "Unterkante in der Mitte"
      ]
+    },
+    "radius": {
+     "label": "Radius"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5040,26 +5456,26 @@
     "angle": {
      "label": "Winkel"
     },
-    "angleChannel": {
-     "label": "Winkel aus",
+    "phi": {
+     "label": "φ",
      "options": [
+      "Lum",
       "R",
       "G",
       "B",
-      "Luminanz",
       "Alpha"
      ]
     },
     "center": {
      "label": "Mitte"
     },
-    "distanceChannel": {
-     "label": "Abstand aus",
+    "rho": {
+     "label": "ρ",
      "options": [
+      "Lum",
       "R",
       "G",
       "B",
-      "Luminanz",
       "Alpha"
      ]
     },
@@ -5092,6 +5508,13 @@
     },
     "offset": {
      "label": "Versatz"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5138,6 +5561,14 @@
      "options": [
       "Sinus",
       "Dreieck"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard",
+      "Standard"
      ]
     }
    }
@@ -5279,20 +5710,23 @@
    }
   },
   "radialblur": {
-   "description": "Erzeugt eine radiale Zoom-Unschärfe durch Mittelung von Abtastwerten entlang von Strahlen aus einem Mittelpunkt; die Stärke ist einstellbar. Mit „Länge: Gleichmäßig“ sind alle Streifen gleich lang, statt mit dem Abstand zur Mitte zu wachsen.",
+   "description": "Erzeugt eine radiale Zoom-Unschärfe durch Mittelung von Abtastwerten entlang von Strahlen aus einem Mittelpunkt; die Stärke ist einstellbar. Mit „Adaptiv“ werden die Streifen mit dem Abstand zur Mitte länger; ausgeschaltet sind alle Streifen gleich lang.",
    "name": "Zoom-Unschärfe",
    "params": {
-    "amount": {
-     "label": "Stärke"
+    "adaptive": {
+     "label": "Adaptiv"
     },
     "center": {
      "label": "Mitte"
     },
-    "streak": {
-     "label": "Länge",
+    "zoom": {
+     "label": "Stärke"
+    },
+    "style": {
+     "label": "Stil",
      "options": [
-      "Nach Abstand",
-      "Gleichmäßig"
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -5308,7 +5742,7 @@
      "label": "Winkel"
     },
     "center": {
-     "label": "Mitte"
+     "label": "Position"
     },
     "color": {
      "label": "Farbe"
@@ -5397,6 +5831,13 @@
     "seed": {
      "label": "Zufallswert"
     },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
+    },
     "sweep": {
      "label": "Bogenwinkel"
     }
@@ -5419,10 +5860,17 @@
      "label": "Licht"
     },
     "reach": {
-     "label": "Länge"
+     "label": "Größe"
     },
     "fill": {
      "label": "Füllung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5439,8 +5887,8 @@
     "direction": {
      "label": "Richtung",
      "options": [
-      "Im Uhrzeigersinn",
-      "Gegen den Uhrzeigersinn",
+      "CW",
+      "CCW",
       "Beide"
      ]
     },
@@ -5480,6 +5928,13 @@
     },
     "speed": {
      "label": "Geschwindigkeit"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5600,6 +6055,13 @@
     },
     "scale": {
      "label": "Skalierung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5634,6 +6096,13 @@
     },
     "thresholdAdd": {
      "label": "Schwellenwert erhöhen"
+    },
+    "look": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5673,6 +6142,13 @@
     },
     "time": {
      "label": "Zeit"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5749,6 +6225,13 @@
     "start": {
      "label": "Anfang"
     },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
+    },
     "tangent": {
      "label": "Tangente"
     }
@@ -5764,7 +6247,7 @@
     "choke": {
      "label": "Verengen"
     },
-    "feather": {
+    "softness": {
      "label": "Weiche Kante"
     },
     "lockLuminance": {
@@ -5776,7 +6259,7 @@
     "target": {
      "label": "Neue Farbe"
     },
-    "threshold": {
+    "tolerance": {
      "label": "Schwellenwert"
     },
     "match": {
@@ -5849,18 +6332,25 @@
       "B"
      ]
     },
-    "mode": {
+    "split": {
      "label": "Modus",
      "options": [
       "Hell",
       "Dunkel",
       "Maske",
       "Luma",
-      "Durchschnitt"
+      "Luma-Alpha"
      ]
     },
     "strength": {
      "label": "Stärke"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -5868,19 +6358,19 @@
    "description": "Zeichnet ein verdrehtes Band mit wechselnder Breite über die deckenden Bereiche der Ebene; animiere die Phase, damit es fließt, oder stanze es aus der Ebene aus.",
    "name": "Band",
    "params": {
-    "angle": {
+    "tilt": {
      "label": "Winkel"
     },
     "color": {
      "label": "Farbe"
     },
-    "frequency": {
+    "waves": {
      "label": "Frequenz"
     },
-    "magnitude": {
+    "amplitude": {
      "label": "Ausmaß"
     },
-    "offset": {
+    "shift": {
      "label": "Versatz"
     },
     "phase": {
@@ -5889,14 +6379,14 @@
     "punch": {
      "label": "Ausstanzen"
     },
-    "smoothing": {
+    "soften": {
      "label": "Glättung"
     },
     "tint": {
      "label": "Tönung"
     },
     "tintAmount": {
-     "label": "Tönungsstärke"
+     "label": "Tönungsfarbe"
     },
     "width": {
      "label": "Breite"
@@ -5934,11 +6424,11 @@
     "octaves": {
      "label": "Oktaven"
     },
-    "roughness": {
-     "label": "Rauheit"
+    "strength": {
+     "label": "Stärke"
     },
-    "scale": {
-     "label": "Skalierung"
+    "detail": {
+     "label": "Detail"
     },
     "seed": {
      "label": "Seed"
@@ -6227,11 +6717,18 @@
    "description": "Wendet eine Unscharfmaskierung mit einer 3x3-Nachbarschaft an, um feine Details zu betonen.",
    "name": "Schärfen",
    "params": {
-    "amount": {
+    "sharpness": {
      "label": "Stärke"
     },
     "radius": {
      "label": "Radius"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -6308,11 +6805,29 @@
     "angle": {
      "label": "Lichtwinkel"
     },
+    "angle_d": {
+     "label": "Diffuswinkel"
+    },
+    "angle_s": {
+     "label": "Glanzwinkel"
+    },
     "blur": {
-     "label": "Größe"
+     "label": "Radius"
+    },
+    "color_d": {
+     "label": "Diffusfarbe"
+    },
+    "color_s": {
+     "label": "Glanzfarbe"
     },
     "depth": {
      "label": "Tiefe"
+    },
+    "elevation_d": {
+     "label": "Diffushöhe"
+    },
+    "elevation_s": {
+     "label": "Glanzhöhe"
     },
     "highlight": {
      "label": "Glanzlicht"
@@ -6320,8 +6835,24 @@
     "intensity": {
      "label": "Intensität"
     },
+    "intensity_d": {
+     "label": "Diffusintensität"
+    },
+    "intensity_s": {
+     "label": "Glanzintensität"
+    },
     "shadow": {
      "label": "Schatten"
+    },
+    "spec": {
+     "label": "Glanzkoeffizient"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -6344,8 +6875,8 @@
     "blend": {
      "label": "Mischung"
     },
-    "blur": {
-     "label": "Größe"
+    "diffusion": {
+     "label": "Streuung"
     },
     "brightness": {
      "label": "Helligkeit"
@@ -6360,7 +6891,7 @@
      "label": "Lichter"
     },
     "opacity": {
-     "label": "Deckkraft"
+     "label": "Alpha"
     },
     "outside": {
      "label": "Äußeres Leuchten"
@@ -6370,6 +6901,13 @@
      "options": [
       "Gleichmäßig",
       "Ebene"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -6546,6 +7084,13 @@
    "params": {
     "rpm": {
      "label": "U/min"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -6558,6 +7103,13 @@
     },
     "sweep": {
      "label": "Winkel"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -6659,7 +7211,7 @@
     "feather": {
      "label": "Weichzeichnung"
     },
-    "saturation": {
+    "sat": {
      "label": "Sättigung"
     },
     "threshold": {
@@ -6947,6 +7499,13 @@
       "Mitte",
       "Ecke"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -6966,10 +7525,10 @@
    "description": "Schneidet die Ebene entlang einer Linie auf und zieht die beiden Hälften auseinander, wobei die Pixel auf der Linie in die Lücke gedehnt werden.",
    "name": "Segment strecken",
    "params": {
-    "angle": {
+    "cutAngle": {
      "label": "Winkel"
     },
-    "offset": {
+    "shift": {
      "label": "Versatz"
     },
     "relative": {
@@ -6978,7 +7537,7 @@
     "spread": {
      "label": "Streuung"
     },
-    "stretch": {
+    "span": {
      "label": "Dehnung"
     }
    }
@@ -6995,6 +7554,13 @@
     },
     "scale": {
      "label": "Skalierung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -7022,6 +7588,13 @@
     },
     "smoothing": {
      "label": "Glättung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     },
     "width": {
      "label": "Breite"
@@ -7053,7 +7626,7 @@
     "angle2": {
      "label": "Winkel 2"
     },
-    "frequency": {
+    "freq": {
      "label": "Frequenz"
     },
     "phase": {
@@ -7064,6 +7637,13 @@
      "options": [
       "Sinus",
       "Dreieck"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    }
@@ -7236,6 +7816,13 @@
       "Wort",
       "Zeile"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    },
    "presets": {
@@ -7256,7 +7843,7 @@
      "label": "Benutzerdefiniert"
     },
     "charset": {
-     "label": "Zeichen",
+     "label": "Zeichensatz",
      "options": [
       "Buchstaben",
       "Großbuchstaben",
@@ -7369,49 +7956,58 @@
    }
   },
   "texttransform": {
-   "description": "Bewegt, skaliert, dreht, blendet aus und tönt Buchstaben, Wörter oder Zeilen innerhalb eines Bereichs. Anker legt fest, ob Skalierung und Rotation von jeder Komponente oder von der Mitte der Ebene ausgehen. Verschiebe den Bereich mit „Versatz“, damit die Änderung durch den Text wandert.",
+   "description": "Bewegt, skaliert, dreht, blendet aus und tönt Buchstaben, Wörter oder Zeilen innerhalb eines Bereichs. Anker legt fest, ob Skalierung und Rotation von jeder Komponente oder von der Mitte der Ebene ausgehen. Verschiebe den Bereich mit „Phase“, damit die Änderung durch den Text wandert.",
    "name": "Text transformieren",
    "params": {
-    "anchor": {
+    "anchorTo": {
      "label": "Anker",
      "options": [
-      "Komponente",
-      "Ebene"
+      "Ebene",
+      "Komponente"
      ]
+    },
+    "easeIn": {
+     "label": "Ease-in"
+    },
+    "easeOut": {
+     "label": "Ease-out"
     },
     "end": {
      "label": "Ende"
     },
     "offset": {
-     "label": "Versatz"
+     "label": "Phase"
     },
-    "opacity": {
+    "alpha": {
      "label": "Deckkraft"
     },
+    "overlap": {
+     "label": "Überlappung"
+    },
     "position": {
-     "label": "Position"
+     "label": "Versatz"
     },
     "randomOrder": {
      "label": "Zufällige Reihenfolge"
     },
     "rotation": {
-     "label": "Rotation"
+     "label": "Winkel"
     },
-    "scale": {
+    "scaleBy": {
      "label": "Skalierung"
     },
     "seed": {
      "label": "Seed"
     },
-    "shape": {
+    "curve": {
      "label": "Form",
      "options": [
       "Rechteck",
+      "Weich",
+      "Dreieck",
       "Anstieg",
       "Abfall",
-      "Dreieck",
-      "Rund",
-      "Weich"
+      "Rund"
      ]
     },
     "smoothness": {
@@ -7420,15 +8016,33 @@
     "start": {
      "label": "Start"
     },
+    "stretch": {
+     "label": "Streckung"
+    },
     "tint": {
      "label": "Tönung"
     },
     "unit": {
-     "label": "Basierend auf",
+     "label": "Komponente",
      "options": [
       "Zeichen",
       "Wort",
-      "Zeile"
+      "Zeile",
+      "Kontur"
+     ]
+    },
+    "version": {
+     "label": "Bereich",
+     "options": [
+      "Alt",
+      "Standard"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
      ]
     }
    },
@@ -7464,7 +8078,7 @@
     "level": {
      "label": "Schwellenwert"
     },
-    "softness": {
+    "feather": {
      "label": "Weichzeichnung"
     }
    }
@@ -7518,6 +8132,13 @@
     },
     "stretch": {
      "label": "Dehnung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -7581,6 +8202,13 @@
     },
     "stretch": {
      "label": "Dehnung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -7596,7 +8224,8 @@
       "MM:SS",
       "MM:SS.hh",
       "SS.hh",
-      "Frames"
+      "Frames",
+      "MM:SS:FF"
      ]
     },
     "offset": {
@@ -7619,7 +8248,14 @@
    "name": "Bildrate",
    "params": {
     "fps": {
-     "label": "Bilder/Sek."
+     "label": "Schritte/Sek."
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -7766,6 +8402,13 @@
     },
     "twist": {
      "label": "Verdrehung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -7825,6 +8468,13 @@
     },
     "stretch": {
      "label": "Dehnung"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -7871,6 +8521,13 @@
     },
     "screenSpace": {
      "label": "Bildschirmraum"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -7903,7 +8560,7 @@
     "amount": {
      "label": "Menge"
     },
-    "radius": {
+    "blurRadius": {
      "label": "Stärke"
     },
     "showMask": {
@@ -8082,7 +8739,7 @@
     "phase": {
      "label": "Phase"
     },
-    "scale": {
+    "cellScale": {
      "label": "Skalierung"
     },
     "seed": {
@@ -8090,8 +8747,84 @@
     }
    }
   },
+  "vortexblur": {
+   "description": "Verwischt die Ebene in einem Wirbel um die Mitte, am stärksten in der Mitte und bis Radius (ein Anteil des Bildschirms) auslaufend. Farbaberration zieht den Rot-, Grün- und Blaukanal um Mittelkanal auseinander.",
+   "name": "Wirbelunschärfe",
+   "params": {
+    "center": {
+     "label": "Mitte"
+    },
+    "strength": {
+     "label": "Stärke"
+    },
+    "radius": {
+     "label": "Radius"
+    },
+    "aberration": {
+     "label": "Farbaberration"
+    },
+    "centerChannel": {
+     "label": "Mittelkanal",
+     "options": [
+      "Rot",
+      "Grün",
+      "Blau"
+     ]
+    }
+   }
+  },
+  "warpblur": {
+   "description": "Verschmiert die Ebene entlang von weichem fraktalem Rauschen, sodass jede Stelle unterschiedlich lang und in eine andere Richtung zieht. Richtung legt fest, wohin die Schlieren laufen, Nur eine Achse hält sie allein in dieser Richtung, und Gewichtung schiebt alle Schlieren in dieselbe Richtung.",
+   "name": "Verzerrungsunschärfe",
+   "params": {
+    "parallax": {
+     "label": "Parallaxe"
+    },
+    "offset": {
+     "label": "Versatz"
+    },
+    "strength": {
+     "label": "Stärke"
+    },
+    "evolution": {
+     "label": "Evolution"
+    },
+    "direction": {
+     "label": "Richtung",
+     "options": [
+      "Horizontal",
+      "Vertikal",
+      "Beide",
+      "Radial",
+      "Spirale",
+      "Verdrehung"
+     ]
+    },
+    "scale": {
+     "label": "Skalierung"
+    },
+    "stretch": {
+     "label": "Dehnung"
+    },
+    "seed": {
+     "label": "Seed"
+    },
+    "singleAxis": {
+     "label": "Nur eine Achse"
+    },
+    "screenSpace": {
+     "label": "Bildschirmraum"
+    },
+    "octaves": {
+     "label": "Oktaven"
+    },
+    "bias": {
+     "label": "Gewichtung"
+    }
+   }
+  },
   "wavewarp": {
-   "description": "Verbiegt die Ebene mit einer Sinuswelle: Abstand legt fest, wie viele Wellen sie durchlaufen, Ausmaß, wie weit sie schieben, Winkel, in welche Richtung die Wellen laufen, und Verzerrungswinkel, in welche Richtung sie schieben. Mit Bildschirmraum richtet sich die Wellengröße nach dem Bildschirm statt nach der Ebene. Querausmaß fügt eine zweite Welle hinzu, deren Größe Querabstand bestimmt; sie läuft entlang des Verzerrungswinkels und schiebt entlang des Winkels. Mit „Ursprung: Bildschirm unten links“ werden die Wellen von dieser Bildschirmecke aus an der kürzeren Bildschirmseite gemessen, und Phase verschiebt sie dann.",
+   "description": "Verbiegt die Ebene mit einer Sinuswelle: Abstand legt fest, wie viele Wellen sie durchlaufen, Ausmaß, wie weit sie schieben, Winkel, in welche Richtung die Wellen laufen, und Verzerrungswinkel, in welche Richtung sie schieben. Mit Bildschirmraum richtet sich die Wellengröße nach dem Bildschirm statt nach der Ebene. Querausmaß fügt eine zweite Welle hinzu, deren Größe Querabstand bestimmt; sie läuft entlang des Verzerrungswinkels und schiebt entlang des Winkels. Mit „Ursprung: Bildschirm unten links“ werden die Wellen von dieser Bildschirmecke aus an der kürzeren Bildschirmseite gemessen, und Phase verschiebt sie dann. Dämpfung lässt die Wellen zum Dämpfungsanker hin ausklingen, einer Stelle quer über die Ebene von 0 bis 1 entlang von Winkel; Dämpfungsabstand dehnt die Wellen über 0 nahe am Anker und unter 0 weiter weg davon.",
    "name": "Wellenverzerrung",
    "params": {
     "angle": {
@@ -8109,7 +8842,7 @@
     "speed": {
      "label": "Geschwindigkeit"
     },
-    "warpAngle": {
+    "warp": {
      "label": "Verzerrungswinkel"
     },
     "screenSpace": {
@@ -8127,6 +8860,29 @@
       "Ebenenecke",
       "Bildschirm unten links"
      ]
+    },
+    "damping": {
+     "label": "Dämpfung"
+    },
+    "dampingSpace": {
+     "label": "Dämpfungsabstand"
+    },
+    "dampingOrigin": {
+     "label": "Dämpfungsanker"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
+    },
+    "axes": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -8141,13 +8897,20 @@
      "label": "Ende"
     },
     "feather": {
-     "label": "Weichzeichnung"
+     "label": "Weichheit"
     },
     "softness": {
-     "label": "Weichheit"
+     "label": "Weiche Kante"
     },
     "start": {
      "label": "Start"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klassisch",
+      "Standard"
+     ]
     }
    }
   },
@@ -8200,7 +8963,7 @@
       "Aus"
      ]
     },
-    "strength": {
+    "zoom": {
      "label": "Stärke"
     }
    }

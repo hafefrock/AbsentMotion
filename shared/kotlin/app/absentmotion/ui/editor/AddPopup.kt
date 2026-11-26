@@ -1,6 +1,7 @@
 package app.absentmotion.ui.editor
 
 import app.absentmotion.platform.BackHandler
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,11 +57,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.absentmotion.editor.EditorState
@@ -70,6 +75,7 @@ import app.absentmotion.editor.startFreehand
 import app.absentmotion.editor.startVectorDrawing
 import app.absentmotion.model.ShapeCatalog
 import app.absentmotion.ui.theme.Am
+import app.absentmotion.ui.theme.Motion
 import app.absentmotion.ui.theme.Swap
 import app.absentmotion.ui.theme.TilePress
 import app.absentmotion.ui.theme.pressScale
@@ -84,6 +90,7 @@ import app.absentmotion.ui.HoldName
 internal val AddPopupHeight = 244.dp
 
 private val PopupBar get() = Am.Button
+private val TabShadow = Color.Black.copy(alpha = 0.3f)
 private val DotIdle get() = Am.Caption
 private val Disc get() = Am.Panel
 
@@ -141,9 +148,23 @@ internal fun AddPopup(state: EditorState, modifier: Modifier = Modifier, library
         Column(Modifier.weight(1f).fillMaxHeight()) {
             androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth().height(58.dp)) {
                 val tabWidth = minOf(64.dp, (maxWidth - 6.dp) / (Tabs.size - 1))
-                Row(Modifier.fillMaxHeight().horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 6.dp)) {
+                val scroll = androidx.compose.foundation.rememberScrollState()
+                val startFade by animateFloatAsState(if (scroll.canScrollBackward) 1f else 0f, Motion.fast(), label = "tabStart")
+                val endFade by animateFloatAsState(if (scroll.canScrollForward) 1f else 0f, Motion.fast(), label = "tabEnd")
+                val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                Row(Modifier.fillMaxHeight().horizontalScroll(scroll).padding(start = 6.dp)) {
                     Tabs.forEachIndexed { i, tab -> TabButton(tab, active = i == selectedTab, enabled = true, Modifier.width(tabWidth).tutorialTarget(if (i == 1) "add_tab_media" else if (i == 2) "add_tab_audio" else null)) { selectedTab = i } }
                 }
+                Box(
+                    Modifier.align(Alignment.CenterStart).width(24.dp).fillMaxHeight()
+                        .graphicsLayer { alpha = startFade }
+                        .background(Brush.horizontalGradient(if (rtl) listOf(Color.Transparent, TabShadow) else listOf(TabShadow, Color.Transparent))),
+                )
+                Box(
+                    Modifier.align(Alignment.CenterEnd).width(24.dp).fillMaxHeight()
+                        .graphicsLayer { alpha = endFade }
+                        .background(Brush.horizontalGradient(if (rtl) listOf(TabShadow, Color.Transparent) else listOf(Color.Transparent, TabShadow))),
+                )
             }
             val body = Modifier.weight(1f).fillMaxWidth().background(Am.Panel).tutorialTarget(if (selectedTab == 1) "add_media" else if (selectedTab == 2) "add_audio" else null)
             Swap(selectedTab, body, rise = 0.dp) { TabPage(selectedTab, state, library) }
@@ -214,24 +235,28 @@ private fun ShapePages(state: EditorState, modifier: Modifier) = androidx.compos
 
 @Composable
 private fun ToolsPage(state: EditorState, modifier: Modifier) {
-    val tools = listOfNotNull(
-        Triple(1, app.absentmotion.ui.home.HomeIcons.Compress, R.string.tools_compress),
-        Triple(3, app.absentmotion.ui.home.HomeIcons.Trim, R.string.tools_trim),
-        Triple(4, app.absentmotion.ui.home.HomeIcons.Audio, R.string.tools_extract),
-        Triple(5, app.absentmotion.ui.home.HomeIcons.Gif, R.string.tools_gif),
-        Triple(2, app.absentmotion.ui.home.HomeIcons.Download, R.string.tools_downloader).takeIf { app.absentmotion.platform.videoDownloader().available },
-    )
+    val importLink = app.absentmotion.ui.home.LocalImportLink.current
+    val tools = app.absentmotion.ui.home.projectTools(state.settings, importLink != null)
     LazyHorizontalGrid(AtLeastTwo(96.dp), modifier.clipToBounds()) {
-        items(tools, key = { it.first }) { (id, icon, label) ->
+        items(tools, key = { it }) { id ->
+            val tool = app.absentmotion.ui.home.toolInfo(id)
             val press = remember { MutableInteractionSource() }
             Column(
-                Modifier.size(80.dp, 96.dp).tutorialGuard().pressScale(press, TilePress).clickable(press, LocalIndication.current) { state.toolOpen = id },
+                Modifier.size(80.dp, 96.dp).tutorialGuard().pressScale(press, TilePress).clickable(press, LocalIndication.current) { state.openTool(id, importLink) },
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
             ) {
-                Icon(icon, null, Modifier.size(28.dp), tint = Am.OnDark)
-                Text(stringResource(label), Modifier.padding(top = 6.dp, start = 4.dp, end = 4.dp), color = Am.OnDark, fontSize = 12.sp, lineHeight = 14.sp, textAlign = TextAlign.Center, maxLines = 2)
+                Icon(tool.icon, null, Modifier.size(28.dp), tint = Am.OnDark)
+                Text(stringResource(tool.title), Modifier.padding(top = 6.dp, start = 4.dp, end = 4.dp), color = Am.OnDark, fontSize = 12.sp, lineHeight = 14.sp, textAlign = TextAlign.Center, maxLines = 3)
             }
         }
+    }
+}
+
+internal fun EditorState.openTool(id: String, importLink: (() -> Unit)?) {
+    when (id) {
+        "importer" -> importLink?.invoke()
+        "send" -> { commitTyping(); endGesture(); toolOpen = 7 }
+        else -> toolOpen = app.absentmotion.ui.home.toolInfo(id).open
     }
 }
 

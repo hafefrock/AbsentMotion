@@ -120,7 +120,7 @@
      "label": "Katmana maskele"
     },
     "mix": {
-     "label": "Karışım"
+     "label": "Dolgu"
     },
     "spill": {
      "label": "Efektler Dışarı Taşsın"
@@ -429,6 +429,13 @@
    "params": {
     "frequency": {
      "label": "Frekans"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -500,14 +507,25 @@
    "description": "Yumuşak, eşit bir bulanıklık. Şekil Kutu olduğunda bunun yerine her noktanın çevresindeki eşit bir karenin ortalaması alınır.",
    "name": "Bulanıklaştırma",
    "params": {
-    "strength": {
-     "label": "Güç"
+    "iterations": {
+     "label": "Yineleme sayısı"
     },
     "shape": {
      "label": "Şekil",
      "options": [
       "Yumuşak",
-      "Kutu"
+      "Kutu",
+      "Hızlı kutu"
+     ]
+    },
+    "strength": {
+     "label": "Güç"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -679,6 +697,45 @@
     }
    }
   },
+  "cartoon": {
+   "description": "Renkleri birkaç kademeye indirir ve görüntünün keskin değiştiği yerlere ana hat çizer. Güç, kaç kenarın ana hat alacağını belirler.",
+   "name": "Karikatür",
+   "params": {
+    "strength": {
+     "label": "Güç"
+    },
+    "color": {
+     "label": "Ana Hat Rengi"
+    }
+   }
+  },
+  "channelmixer": {
+   "description": "Görüntüyü kırmızı, yeşil ve mavi kanallarından yeniden kurar: her kanal kendi rengini ekler, ardından Gama her kanalı büker ve Ofset hepsini yükseltir ya da düşürür.",
+   "name": "Kanal Karıştırıcı",
+   "params": {
+    "red": {
+     "label": "Kırmızı"
+    },
+    "green": {
+     "label": "Yeşil"
+    },
+    "blue": {
+     "label": "Mavi"
+    },
+    "gammaRed": {
+     "label": "Kırmızı Gama"
+    },
+    "gammaGreen": {
+     "label": "Yeşil Gama"
+    },
+    "gammaBlue": {
+     "label": "Mavi Gama"
+    },
+    "offset": {
+     "label": "Ofset"
+    }
+   }
+  },
   "channelremap": {
    "description": "Her renk kanalını katmanın başka bir kanalından yeniden oluşturur; sahte renk veya parlaklığı alfaya taşımak için.",
    "name": "Kanal yeniden eşleme (RGB)",
@@ -686,49 +743,49 @@
     "a": {
      "label": "A",
      "options": [
-      "Kırmızı",
-      "Yeşil",
-      "Mavi",
-      "Alfa",
-      "Parlaklık",
-      "Sıfır",
-      "Tam"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "b": {
      "label": "B",
      "options": [
-      "Kırmızı",
-      "Yeşil",
-      "Mavi",
-      "Alfa",
-      "Parlaklık",
-      "Sıfır",
-      "Tam"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "g": {
      "label": "G",
      "options": [
-      "Kırmızı",
-      "Yeşil",
-      "Mavi",
-      "Alfa",
-      "Parlaklık",
-      "Sıfır",
-      "Tam"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "r": {
      "label": "R",
      "options": [
-      "Kırmızı",
-      "Yeşil",
-      "Mavi",
-      "Alfa",
-      "Parlaklık",
-      "Sıfır",
-      "Tam"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     }
    }
@@ -740,49 +797,49 @@
     "a": {
      "label": "A",
      "options": [
-      "Ton",
-      "Doygunluk",
-      "Değer",
-      "Alfa",
-      "Parlaklık",
-      "Sıfır",
-      "Tam"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "h": {
      "label": "H",
      "options": [
-      "Ton",
-      "Doygunluk",
-      "Değer",
-      "Alfa",
-      "Parlaklık",
-      "Sıfır",
-      "Tam"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "s": {
      "label": "S",
      "options": [
-      "Ton",
-      "Doygunluk",
-      "Değer",
-      "Alfa",
-      "Parlaklık",
-      "Sıfır",
-      "Tam"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "v": {
      "label": "V",
      "options": [
-      "Ton",
-      "Doygunluk",
-      "Değer",
-      "Alfa",
-      "Parlaklık",
-      "Sıfır",
-      "Tam"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     }
    }
@@ -797,7 +854,7 @@
     "color": {
      "label": "Renk"
     },
-    "count": {
+    "cells": {
      "label": "Adet"
     },
     "offset": {
@@ -832,6 +889,16 @@
     },
     "tolerance": {
      "label": "Tolerans"
+    },
+    "luma": {
+     "label": "Luma Ağırlığı"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -850,6 +917,13 @@
      "options": [
       "Doğrusal",
       "Işınlar"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -881,6 +955,13 @@
      "options": [
       "Katman",
       "Ekran"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -949,8 +1030,26 @@
     }
    }
   },
+  "coloradjust": {
+   "description": "Parlaklık, kontrast, doygunluk ve canlılığı tek adımda ayarlar; canlılık en çok soluk renkleri güçlendirir.",
+   "name": "Renk Ayarı",
+   "params": {
+    "brightness": {
+     "label": "Parlaklık"
+    },
+    "contrast": {
+     "label": "Kontrast"
+    },
+    "saturation": {
+     "label": "Doygunluk"
+    },
+    "vibrance": {
+     "label": "Canlılık"
+    }
+   }
+  },
   "colorbalance": {
-   "description": "Gölgeleri, orta tonları ve vurguları kendi renklerine doğru iter (gri, bir aralığı değiştirmeden bırakır).",
+   "description": "Gölgeleri, orta tonları ve vurguları kendi renklerine doğru iter (gri, bir aralığı değiştirmeden bırakır). Parlaklığı Koru, renkler değişirken her pikselin parlaklığını korur.",
    "name": "Renk Dengesi",
    "params": {
     "amount": {
@@ -964,6 +1063,16 @@
     },
     "shadows": {
      "label": "Gölgeler"
+    },
+    "preserve": {
+     "label": "Parlaklığı Koru"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -1030,7 +1139,8 @@
      "label": "Stil",
      "options": [
       "Klasik",
-      "Parlaklığa Göre"
+      "Parlaklığa Göre",
+      "Standart"
      ]
     }
    }
@@ -1315,6 +1425,13 @@
       "Merkez",
       "Köşe"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -1406,6 +1523,13 @@
      "options": [
       "Merkez",
       "Köşe"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -1648,6 +1772,27 @@
     }
    }
   },
+  "difference": {
+   "description": "Katmanın arkasındakinden nasıl farklı olduğunu gösterir; Fark karışım modu gibi ama efekt listesinin bu noktasında.",
+   "name": "Fark",
+   "params": {
+    "amount": {
+     "label": "Miktar"
+    }
+   }
+  },
+  "differencematte": {
+   "description": "Katmanın arkadaki katmanlara benzeyen kısımlarını gizler, böylece yalnızca farklı olan kalır. Eşik, bir noktanın kalması için ne kadar farklı olması gerektiğini belirler; Kenar yumuşatma kenarı yumuşatır.",
+   "name": "Fark Maskesi",
+   "params": {
+    "threshold": {
+     "label": "Eşik"
+    },
+    "feather": {
+     "label": "Kenar yumuşatma"
+    }
+   }
+  },
   "directionalblur": {
    "description": "Örnekleri Açı yönünde ortalayarak hareket bulanıklığı oluşturur. Yayılım İki taraf olduğunda bulanıklık ileri ve geri eşit dağılır.",
    "name": "Yönlü Bulanıklaştırma",
@@ -1701,7 +1846,8 @@
      "options": [
       "R",
       "G",
-      "B"
+      "B",
+      "Parlaklık"
      ]
     },
     "ychannel": {
@@ -1709,7 +1855,15 @@
      "options": [
       "R",
       "G",
-      "B"
+      "B",
+      "Parlaklık"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -1765,10 +1919,10 @@
     "phase": {
      "label": "Faz"
     },
-    "radius": {
+    "dotRadius": {
      "label": "Yarıçap"
     },
-    "scale": {
+    "zoom": {
      "label": "Ölçek"
     },
     "seed": {
@@ -1788,11 +1942,18 @@
     },
     "start": {
      "label": "Başlangıç"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
   "dropshadow": {
-   "description": "Katmanın şeklinin yumuşak bir gölgesini arkasına çizer; Ofset X ve Ofset Y ile kaydırılır.",
+   "description": "Katmanın şeklinin yumuşak bir gölgesini arkasına çizer; Ofset X ve Ofset Y ile kaydırılır. Yayılım, gölgeyi solmadan önce büyütür.",
    "name": "Alt gölge",
    "params": {
     "blur": {
@@ -1809,6 +1970,9 @@
     },
     "y": {
      "label": "Ofset Y"
+    },
+    "spread": {
+     "label": "Yayılım"
     }
    }
   },
@@ -1837,11 +2001,11 @@
     "alpha": {
      "label": "Alfa"
     },
-    "composite": {
+    "mode": {
      "label": "Birleştirme",
      "options": [
-      "Arkada",
-      "Üstte"
+      "Üstte",
+      "Arkada"
      ]
     },
     "count": {
@@ -1849,11 +2013,18 @@
     },
     "seconds": {
      "label": "Saniye"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
   "edgedetect": {
-   "description": "Görüntünün değiştiği yerlerde parlak, diğer yerlerde koyu çizgiler.",
+   "description": "Görüntünün değiştiği yerlerde parlak, diğer yerlerde koyu çizgiler. Mürekkep beyaz üzerine koyu çizgiler çizer; Renk kenarlarda görüntünün kendi renklerini korur.",
    "name": "Kenar Algılama",
    "params": {
     "strength": {
@@ -1863,7 +2034,8 @@
      "label": "Stil",
      "options": [
       "Klasik",
-      "Mürekkep"
+      "Mürekkep",
+      "Renk"
      ]
     },
     "spacing": {
@@ -1919,6 +2091,19 @@
     },
     "mask": {
      "label": "Katmana maskele"
+    },
+    "smoothing": {
+     "label": "Yumuşatma"
+    },
+    "strength": {
+     "label": "Güç"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -2191,14 +2376,21 @@
     },
     "fadeOut": {
      "label": "Çıkış"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
   "feather": {
-   "description": "Katmanın alfa kenarlarını yumuşatır. İçe doğru, mevcut dış hattın içine solar; Alfa bulanıklaştır yumuşatılan kenarı dışarıya da taşır.",
+   "description": "Katmanın alfa kenarlarını yumuşatır ve onları dış hattan başlayarak belirginleştirir. Yineleme sayısı arttıkça geçiş daha yumuşak ve derin olur. Klasik stilde: İçe doğru, mevcut dış hattın içine solar; Alfa bulanıklaştır yumuşatılan kenarı dışarıya da taşır.",
    "name": "Tüylendirme",
    "params": {
-    "blur": {
+    "strength": {
      "label": "Güç"
     },
     "mode": {
@@ -2206,6 +2398,16 @@
      "options": [
       "İçe doğru",
       "Alfa bulanıklaştır"
+     ]
+    },
+    "iter": {
+     "label": "Yineleme sayısı"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -2264,6 +2466,13 @@
     },
     "tintColor": {
      "label": "Ton rengi"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -2479,6 +2688,13 @@
       "Mesafe",
       "Yumuşak"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -2507,6 +2723,9 @@
     "offset": {
      "label": "Ofset"
     },
+    "parallax": {
+     "label": "Paralaks"
+    },
     "scale": {
      "label": "Ölçek"
     },
@@ -2515,6 +2734,13 @@
     },
     "stretch": {
      "label": "Uzat"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -2633,6 +2859,13 @@
     },
     "threshold3": {
      "label": "Aralık 3"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -2782,6 +3015,9 @@
       "Gradyan",
       "Spektrum"
      ]
+    },
+    "squeeze": {
+     "label": "Sıkıştırma"
     }
    }
   },
@@ -2839,6 +3075,13 @@
       "Kutu",
       "Oval"
      ]
+    },
+    "look": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -2874,6 +3117,19 @@
     },
     "width": {
      "label": "Genişlik"
+    },
+    "spacing": {
+     "label": "Aralık"
+    },
+    "smoothing": {
+     "label": "Yumuşatma"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -2946,6 +3202,13 @@
     },
     "stagger": {
      "label": "Kademelendirme"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -2998,11 +3261,18 @@
     "paper": {
      "label": "Kağıt rengi"
     },
+    "phase": {
+     "label": "Evre"
+    },
+    "strength": {
+     "label": "Güç"
+    },
     "style": {
      "label": "Stil",
      "options": [
       "Klasik",
-      "İki renk"
+      "İki renk",
+      "Standart"
      ]
     }
    }
@@ -3028,6 +3298,13 @@
     },
     "strength": {
      "label": "Güç"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -3122,6 +3399,13 @@
      "options": [
       "Merkez",
       "Köşe"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -3484,6 +3768,13 @@
       "Merkez",
       "Köşe"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -3628,11 +3919,30 @@
    }
   },
   "innerbulge": {
-   "description": "Katmanın ortasını dışa şişirir veya içe sıkıştırır; katmanın kenarları yerinde kalır.",
+   "description": "Merkez çevresindeki Yarıçap büyüklüğünde bir dairenin içinde katmanı dışa şişirir veya içe sıkıştırır; katmanın kenarları yerinde kalır. Kenar yumuşatma, katmanın kenarlardan ne kadar içeride hareket etmeye başlayacağını belirler; Gauss ortayı eşit biçimde büyütülmüş tutar ve azalmayı kısaltır.",
    "name": "İç sıkıştırma/şişirme",
    "params": {
     "strength": {
      "label": "Güç"
+    },
+    "center": {
+     "label": "Merkez"
+    },
+    "radius": {
+     "label": "Yarıçap"
+    },
+    "feather": {
+     "label": "Kenar yumuşatma"
+    },
+    "gaussian": {
+     "label": "Gauss"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -3664,6 +3974,13 @@
      "options": [
       "Yuvarlak",
       "Köşeli"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -3768,6 +4085,13 @@
     },
     "sweep": {
      "label": "Açı"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -3837,6 +4161,13 @@
     },
     "mask": {
      "label": "Katmana maskele"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -3936,6 +4267,13 @@
     },
     "seed": {
      "label": "Tohum"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -4048,6 +4386,13 @@
     },
     "high": {
      "label": "Üst eşik"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -4215,6 +4560,9 @@
     "inset": {
      "label": "İçe/dışa"
     },
+    "legacyCoordinates": {
+     "label": "Eski Koordinatlar"
+    },
     "offset": {
      "label": "Kaydırma"
     },
@@ -4226,6 +4574,13 @@
     },
     "rotate": {
      "label": "Otomatik döndür"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -4361,7 +4716,7 @@
    "description": "Katmanın görüntüsünü kaydırır ve katman kutusunun kenarlarında başa döndürür.",
    "name": "Kaydırma",
    "params": {
-    "feather": {
+    "seamFeather": {
      "label": "Yumuşatma"
     },
     "mask": {
@@ -4369,6 +4724,13 @@
     },
     "offset": {
      "label": "Kaydırma"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -4453,12 +4815,12 @@
      "label": "Ortam"
     },
     "amount": {
-     "label": "Pürüzlülük"
+     "label": "Miktar"
     },
     "blend": {
      "label": "Karışım"
     },
-    "blur": {
+    "bevel": {
      "label": "Eğim"
     },
     "color": {
@@ -4480,7 +4842,7 @@
      "label": "Yoğunluk"
     },
     "light": {
-     "label": "Işık rengi"
+     "label": "Renk"
     },
     "refraction": {
      "label": "Kırılma"
@@ -4489,7 +4851,7 @@
      "label": "Yumuşatma örnekleri"
     },
     "scale": {
-     "label": "Pürüzlülük ölçeği"
+     "label": "Ölçek"
     },
     "seed": {
      "label": "Tohum"
@@ -4546,6 +4908,26 @@
     }
    }
   },
+  "outline": {
+   "description": "Katmanın şeklinin dışına dolu bir ana hat çizer: Renk rengini, Genişlik piksel cinsinden kalınlığını belirler.",
+   "name": "Ana hat",
+   "params": {
+    "radius": {
+     "label": "Genişlik"
+    },
+    "color": {
+     "label": "Renk"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Ana hat",
+      "Dolgu",
+      "Bantlar"
+     ]
+    }
+   }
+  },
   "pagecurl": {
    "description": "Katmanı bir sayfa gibi çevirir: bir köşe kalkıp kıvrılarak sayfanın arkasını gösterir. Sayfayı çevirmek için İlerleme değerini canlandırın. Şekli takip et açıkken sayfa görünen kısmın kenarlarından çevrilir; böylece yuvarlak bir resim ya da 3B model görünmez bir kutu yerine kendi kenarından kıvrılır.",
    "name": "Sayfa kıvırma",
@@ -4573,6 +4955,20 @@
     },
     "shine": {
      "label": "Parlaklık"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
+    },
+    "roll": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -4920,8 +5316,18 @@
     "stretch": {
      "label": "Esnetme"
     },
+    "threshold": {
+     "label": "Eşik"
+    },
     "vignette": {
      "label": "Vinyet"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5030,6 +5436,16 @@
       "Üst ortada",
       "Alt ortada"
      ]
+    },
+    "radius": {
+     "label": "Yarıçap"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5040,26 +5456,26 @@
     "angle": {
      "label": "Açı"
     },
-    "angleChannel": {
-     "label": "Açı kaynağı",
+    "phi": {
+     "label": "φ",
      "options": [
+      "Lum",
       "R",
       "G",
       "B",
-      "Parlaklık",
       "Alfa"
      ]
     },
     "center": {
      "label": "Merkez"
     },
-    "distanceChannel": {
-     "label": "Mesafe kaynağı",
+    "rho": {
+     "label": "ρ",
      "options": [
+      "Lum",
       "R",
       "G",
       "B",
-      "Parlaklık",
       "Alfa"
      ]
     },
@@ -5092,6 +5508,13 @@
     },
     "offset": {
      "label": "Ofset"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5138,6 +5561,14 @@
      "options": [
       "Sinüs",
       "Üçgen"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart",
+      "Standart"
      ]
     }
    }
@@ -5279,20 +5710,23 @@
    }
   },
   "radialblur": {
-   "description": "Bir merkez noktadan çıkan ışınlar boyunca örnekleri ortalayarak, gücü ayarlanabilen radyal bir yakınlaştırma bulanıklığı uygular. Uzunluk Eşit olduğunda her iz, merkezden uzaklaştıkça uzamak yerine aynı uzunlukta olur.",
+   "description": "Bir merkez noktadan çıkan ışınlar boyunca örnekleri ortalayarak, gücü ayarlanabilen radyal bir yakınlaştırma bulanıklığı uygular. Uyarlanabilir açıkken izler merkezden uzaklaştıkça uzar; kapalıyken her iz aynı uzunluktadır.",
    "name": "Yakınlaştırma Bulanıklığı",
    "params": {
-    "amount": {
-     "label": "Güç"
+    "adaptive": {
+     "label": "Uyarlanabilir"
     },
     "center": {
      "label": "Merkez"
     },
-    "streak": {
-     "label": "Uzunluk",
+    "zoom": {
+     "label": "Güç"
+    },
+    "style": {
+     "label": "Stil",
      "options": [
-      "Mesafeye göre",
-      "Eşit"
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -5308,7 +5742,7 @@
      "label": "Açı"
     },
     "center": {
-     "label": "Merkez"
+     "label": "Konum"
     },
     "color": {
      "label": "Renk"
@@ -5397,6 +5831,13 @@
     "seed": {
      "label": "Tohum"
     },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
+    },
     "sweep": {
      "label": "Tarama"
     }
@@ -5419,10 +5860,17 @@
      "label": "Işık"
     },
     "reach": {
-     "label": "Uzunluk"
+     "label": "Boyut"
     },
     "fill": {
      "label": "Dolgu"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5439,8 +5887,8 @@
     "direction": {
      "label": "Yön",
      "options": [
-      "Saat yönünde",
-      "Saat yönünün tersine",
+      "CW",
+      "CCW",
       "Her ikisi"
      ]
     },
@@ -5480,6 +5928,13 @@
     },
     "speed": {
      "label": "Hız"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5600,6 +6055,13 @@
     },
     "scale": {
      "label": "Ölçek"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5634,6 +6096,13 @@
     },
     "thresholdAdd": {
      "label": "Eşik ekle"
+    },
+    "look": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5673,6 +6142,13 @@
     },
     "time": {
      "label": "Zaman"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5749,6 +6225,13 @@
     "start": {
      "label": "Başlangıç"
     },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
+    },
     "tangent": {
      "label": "Teğet"
     }
@@ -5764,7 +6247,7 @@
     "choke": {
      "label": "Daraltma"
     },
-    "feather": {
+    "softness": {
      "label": "Kenar yumuşatma"
     },
     "lockLuminance": {
@@ -5776,7 +6259,7 @@
     "target": {
      "label": "Yeni renk"
     },
-    "threshold": {
+    "tolerance": {
      "label": "Eşik"
     },
     "match": {
@@ -5849,18 +6332,25 @@
       "B"
      ]
     },
-    "mode": {
+    "split": {
      "label": "Mod",
      "options": [
       "Açık",
       "Koyu",
       "Maske",
       "Luma",
-      "Ortalama"
+      "Luma Alfa"
      ]
     },
     "strength": {
      "label": "Güç"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -5868,19 +6358,19 @@
    "description": "Katmanın opak kısımları boyunca genişliği değişen kıvrımlı bir şerit çizer; akması için Faz'ı canlandırın veya şeridi katmandan oyun.",
    "name": "Şerit",
    "params": {
-    "angle": {
+    "tilt": {
      "label": "Açı"
     },
     "color": {
      "label": "Renk"
     },
-    "frequency": {
+    "waves": {
      "label": "Frekans"
     },
-    "magnitude": {
+    "amplitude": {
      "label": "Büyüklük"
     },
-    "offset": {
+    "shift": {
      "label": "Ofset"
     },
     "phase": {
@@ -5889,14 +6379,14 @@
     "punch": {
      "label": "Oy"
     },
-    "smoothing": {
+    "soften": {
      "label": "Yumuşatma"
     },
     "tint": {
      "label": "Ton"
     },
     "tintAmount": {
-     "label": "Ton miktarı"
+     "label": "Ton rengi"
     },
     "width": {
      "label": "Genişlik"
@@ -5934,11 +6424,11 @@
     "octaves": {
      "label": "Oktavlar"
     },
-    "roughness": {
-     "label": "Pürüzlülük"
+    "strength": {
+     "label": "Güç"
     },
-    "scale": {
-     "label": "Ölçek"
+    "detail": {
+     "label": "Detay"
     },
     "seed": {
      "label": "Tohum"
@@ -6227,11 +6717,18 @@
    "description": "3x3 komşuluk kullanarak keskin olmayan maske uygular ve ince ayrıntıları belirginleştirir.",
    "name": "Keskinleştir",
    "params": {
-    "amount": {
+    "sharpness": {
      "label": "Güç"
     },
     "radius": {
      "label": "Yarıçap"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -6308,11 +6805,29 @@
     "angle": {
      "label": "Işık açısı"
     },
+    "angle_d": {
+     "label": "Dağınık ışık açısı"
+    },
+    "angle_s": {
+     "label": "Yansıma açısı"
+    },
     "blur": {
-     "label": "Boyut"
+     "label": "Yarıçap"
+    },
+    "color_d": {
+     "label": "Dağınık ışık rengi"
+    },
+    "color_s": {
+     "label": "Yansıma rengi"
     },
     "depth": {
      "label": "Derinlik"
+    },
+    "elevation_d": {
+     "label": "Dağınık ışık yüksekliği"
+    },
+    "elevation_s": {
+     "label": "Yansıma yüksekliği"
     },
     "highlight": {
      "label": "Vurgu"
@@ -6320,8 +6835,24 @@
     "intensity": {
      "label": "Yoğunluk"
     },
+    "intensity_d": {
+     "label": "Dağınık ışık yoğunluğu"
+    },
+    "intensity_s": {
+     "label": "Yansıma yoğunluğu"
+    },
     "shadow": {
      "label": "Gölge"
+    },
+    "spec": {
+     "label": "Yansıma katsayısı"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -6344,8 +6875,8 @@
     "blend": {
      "label": "Karışım"
     },
-    "blur": {
-     "label": "Boyut"
+    "diffusion": {
+     "label": "Yayılım"
     },
     "brightness": {
      "label": "Parlaklık"
@@ -6360,7 +6891,7 @@
      "label": "Işıklar"
     },
     "opacity": {
-     "label": "Opaklık"
+     "label": "Alfa"
     },
     "outside": {
      "label": "Dış parıltı"
@@ -6370,6 +6901,13 @@
      "options": [
       "Eşit",
       "Katman"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -6546,6 +7084,13 @@
    "params": {
     "rpm": {
      "label": "RPM"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -6558,6 +7103,13 @@
     },
     "sweep": {
      "label": "Açı"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -6659,7 +7211,7 @@
     "feather": {
      "label": "Kenar yumuşatma"
     },
-    "saturation": {
+    "sat": {
      "label": "Doygunluk"
     },
     "threshold": {
@@ -6947,6 +7499,13 @@
       "Merkez",
       "Köşe"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -6966,10 +7525,10 @@
    "description": "Katmanı bir çizgi boyunca keser ve iki yarıyı birbirinden ayırır; çizgideki pikselleri boşluğa doğru uzatır.",
    "name": "Segment Esnetme",
    "params": {
-    "angle": {
+    "cutAngle": {
      "label": "Açı"
     },
-    "offset": {
+    "shift": {
      "label": "Ofset"
     },
     "relative": {
@@ -6978,7 +7537,7 @@
     "spread": {
      "label": "Yayılım"
     },
-    "stretch": {
+    "span": {
      "label": "Esnetme"
     }
    }
@@ -6995,6 +7554,13 @@
     },
     "scale": {
      "label": "Ölçek"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -7022,6 +7588,13 @@
     },
     "smoothing": {
      "label": "Yumuşatma"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     },
     "width": {
      "label": "Genişlik"
@@ -7053,7 +7626,7 @@
     "angle2": {
      "label": "Açı 2"
     },
-    "frequency": {
+    "freq": {
      "label": "Frekans"
     },
     "phase": {
@@ -7064,6 +7637,13 @@
      "options": [
       "Sinüs",
       "Üçgen"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    }
@@ -7236,6 +7816,13 @@
       "Sözcük",
       "Satır"
      ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    },
    "presets": {
@@ -7256,7 +7843,7 @@
      "label": "Özel"
     },
     "charset": {
-     "label": "Karakterler",
+     "label": "Karakter kümesi",
      "options": [
       "Harfler",
       "Büyük harf",
@@ -7283,7 +7870,7 @@
      "label": "Evrim"
     },
     "keepSpaces": {
-     "label": "Boşlukları koru"
+     "label": "Boşluğu koru"
     },
     "progress": {
      "label": "Ortaya çıkar"
@@ -7369,49 +7956,58 @@
    }
   },
   "texttransform": {
-   "description": "Bir aralıktaki harfleri, kelimeleri veya satırları taşır, ölçekler, döndürür, soldurur ve renklendirir. Çapa, ölçekleme ve döndürmenin her bileşeni mi yoksa katman merkezini mi kullanacağını belirler. Değişikliğin metin boyunca ilerlemesi için aralığı Ofset ile kaydırın.",
+   "description": "Bir aralıktaki harfleri, kelimeleri veya satırları taşır, ölçekler, döndürür, soldurur ve renklendirir. Çapa, ölçekleme ve döndürmenin her bileşeni mi yoksa katman merkezini mi kullanacağını belirler. Değişikliğin metin boyunca ilerlemesi için aralığı Faz ile kaydırın.",
    "name": "Metin Dönüştürme",
    "params": {
-    "anchor": {
+    "anchorTo": {
      "label": "Çapa",
      "options": [
-      "Bileşen",
-      "Katman"
+      "Katman",
+      "Bileşen"
      ]
+    },
+    "easeIn": {
+     "label": "Yumuşak Giriş"
+    },
+    "easeOut": {
+     "label": "Yumuşak Çıkış"
     },
     "end": {
      "label": "Bitiş"
     },
     "offset": {
-     "label": "Kaydırma"
+     "label": "Faz"
     },
-    "opacity": {
+    "alpha": {
      "label": "Opaklık"
     },
+    "overlap": {
+     "label": "Örtüşme"
+    },
     "position": {
-     "label": "Konum"
+     "label": "Ofset"
     },
     "randomOrder": {
      "label": "Rastgele sıra"
     },
     "rotation": {
-     "label": "Döndürme"
+     "label": "Açı"
     },
-    "scale": {
+    "scaleBy": {
      "label": "Ölçek"
     },
     "seed": {
      "label": "Tohum"
     },
-    "shape": {
+    "curve": {
      "label": "Şekil",
      "options": [
       "Kare",
+      "Pürüzsüz",
+      "Üçgen",
       "Yükselen",
       "Alçalan",
-      "Üçgen",
-      "Yuvarlak",
-      "Pürüzsüz"
+      "Yuvarlak"
      ]
     },
     "smoothness": {
@@ -7420,15 +8016,33 @@
     "start": {
      "label": "Başlangıç"
     },
+    "stretch": {
+     "label": "Uzat"
+    },
     "tint": {
      "label": "Renk tonu"
     },
     "unit": {
-     "label": "Şuna göre",
+     "label": "Bileşen",
      "options": [
       "Karakter",
       "Kelime",
-      "Satır"
+      "Satır",
+      "Kontur"
+     ]
+    },
+    "version": {
+     "label": "Aralık",
+     "options": [
+      "Eski",
+      "Standart"
+     ]
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
      ]
     }
    },
@@ -7464,7 +8078,7 @@
     "level": {
      "label": "Eşik"
     },
-    "softness": {
+    "feather": {
      "label": "Yumuşatma"
     }
    }
@@ -7518,6 +8132,13 @@
     },
     "stretch": {
      "label": "Uzatma"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -7581,6 +8202,13 @@
     },
     "stretch": {
      "label": "Uzatma"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -7596,7 +8224,8 @@
       "MM:SS",
       "MM:SS.hh",
       "SS.hh",
-      "Kare"
+      "Kare",
+      "MM:SS:FF"
      ]
     },
     "offset": {
@@ -7619,7 +8248,14 @@
    "name": "Kare hızı",
    "params": {
     "fps": {
-     "label": "Kare/sn"
+     "label": "Adım/sn"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -7766,6 +8402,13 @@
     },
     "twist": {
      "label": "Büküm"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -7825,6 +8468,13 @@
     },
     "stretch": {
      "label": "Esnetme"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -7871,6 +8521,13 @@
     },
     "screenSpace": {
      "label": "Ekran alanı"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -7903,7 +8560,7 @@
     "amount": {
      "label": "Miktar"
     },
-    "radius": {
+    "blurRadius": {
      "label": "Güç"
     },
     "showMask": {
@@ -8082,7 +8739,7 @@
     "phase": {
      "label": "Faz"
     },
-    "scale": {
+    "cellScale": {
      "label": "Ölçek"
     },
     "seed": {
@@ -8090,8 +8747,84 @@
     }
    }
   },
+  "vortexblur": {
+   "description": "Katmanı Merkez etrafında bir girdapla bulanıklaştırır; ortada en güçlüdür ve Yarıçap'ta (ekranın bir payı) kaybolur. Renk Sapması, kırmızı, yeşil ve mavi kanalları Merkez Kanal etrafında birbirinden ayırır.",
+   "name": "Girdap Bulanıklığı",
+   "params": {
+    "center": {
+     "label": "Merkez"
+    },
+    "strength": {
+     "label": "Güç"
+    },
+    "radius": {
+     "label": "Yarıçap"
+    },
+    "aberration": {
+     "label": "Renk Sapması"
+    },
+    "centerChannel": {
+     "label": "Merkez Kanal",
+     "options": [
+      "Kırmızı",
+      "Yeşil",
+      "Mavi"
+     ]
+    }
+   }
+  },
+  "warpblur": {
+   "description": "Katmanı yumuşak fraktal gürültü boyunca sürükleyip bulaştırır; böylece her nokta farklı uzunlukta ve yönde bir iz bırakır. Yön izlerin hangi yöne gideceğini seçer, Tek eksen onları yalnızca o yönde tutar ve Sapma tüm izleri aynı yöne iter.",
+   "name": "Büküm Bulanıklığı",
+   "params": {
+    "parallax": {
+     "label": "Paralaks"
+    },
+    "offset": {
+     "label": "Ofset"
+    },
+    "strength": {
+     "label": "Güç"
+    },
+    "evolution": {
+     "label": "Evrim"
+    },
+    "direction": {
+     "label": "Yön",
+     "options": [
+      "Yatay",
+      "Dikey",
+      "Her ikisi",
+      "Radyal",
+      "Sarmal",
+      "Büküm"
+     ]
+    },
+    "scale": {
+     "label": "Ölçek"
+    },
+    "stretch": {
+     "label": "Esnetme"
+    },
+    "seed": {
+     "label": "Tohum"
+    },
+    "singleAxis": {
+     "label": "Tek eksen"
+    },
+    "screenSpace": {
+     "label": "Ekran alanı"
+    },
+    "octaves": {
+     "label": "Oktav"
+    },
+    "bias": {
+     "label": "Sapma"
+    }
+   }
+  },
   "wavewarp": {
-   "description": "Katmanı sinüs dalgasıyla büker: Aralık kaç dalganın geçeceğini, Büyüklük ne kadar iteceklerini, Açı dalgaların ilerleme yönünü, Büküm açısı ise itme yönünü belirler. Ekran alanı dalgaları katman yerine ekrana göre boyutlandırır. Çapraz büyüklük, boyutunu Çapraz aralığın belirlediği ikinci bir dalga ekler; bu dalga Büküm açısı boyunca ilerler ve Açı boyunca iter. Başlangıç Ekranın sol altı olduğunda dalgalar ekranın o köşesinden, kısa kenarına göre ölçülür ve Faz onları bu yönde kaydırır.",
+   "description": "Katmanı sinüs dalgasıyla büker: Aralık kaç dalganın geçeceğini, Büyüklük ne kadar iteceklerini, Açı dalgaların ilerleme yönünü, Büküm açısı ise itme yönünü belirler. Ekran alanı dalgaları katman yerine ekrana göre boyutlandırır. Çapraz büyüklük, boyutunu Çapraz aralığın belirlediği ikinci bir dalga ekler; bu dalga Büküm açısı boyunca ilerler ve Açı boyunca iter. Başlangıç Ekranın sol altı olduğunda dalgalar ekranın o köşesinden, kısa kenarına göre ölçülür ve Faz onları bu yönde kaydırır. Sönümleme dalgaları Sönümleme çapasına doğru söndürür; bu, Açı boyunca katmanın üzerinde 0 ile 1 arasındaki bir noktadır. Sönümleme aralığı 0'ın üzerinde çapanın yakınındaki, 0'ın altında ise çapadan uzaktaki dalgaları uzatır.",
    "name": "Dalga Bükümü",
    "params": {
     "angle": {
@@ -8109,7 +8842,7 @@
     "speed": {
      "label": "Hız"
     },
-    "warpAngle": {
+    "warp": {
      "label": "Büküm açısı"
     },
     "screenSpace": {
@@ -8127,6 +8860,29 @@
       "Katman köşesi",
       "Ekranın sol altı"
      ]
+    },
+    "damping": {
+     "label": "Sönümleme"
+    },
+    "dampingSpace": {
+     "label": "Sönümleme aralığı"
+    },
+    "dampingOrigin": {
+     "label": "Sönümleme çapası"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
+    },
+    "axes": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -8141,13 +8897,20 @@
      "label": "Bitiş"
     },
     "feather": {
-     "label": "Kenar yumuşatma"
+     "label": "Yumuşaklık"
     },
     "softness": {
-     "label": "Yumuşaklık"
+     "label": "Kenar yumuşatma"
     },
     "start": {
      "label": "Başlangıç"
+    },
+    "style": {
+     "label": "Stil",
+     "options": [
+      "Klasik",
+      "Standart"
+     ]
     }
    }
   },
@@ -8200,7 +8963,7 @@
       "Kapalı"
      ]
     },
-    "strength": {
+    "zoom": {
      "label": "Güç"
     }
    }

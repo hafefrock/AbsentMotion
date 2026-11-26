@@ -15,6 +15,7 @@ import app.absentmotion.platform.SystemBars
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
@@ -42,6 +43,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import app.absentmotion.compat.EffectMigration
 import app.absentmotion.compat.oldAlightImport
 import app.absentmotion.compat.withReimportTipShown
+import app.absentmotion.effects.readAddedEffectUri
 import app.absentmotion.editor.EditorState
 import app.absentmotion.editor.MultiSelect
 import app.absentmotion.engine.EngineThread
@@ -53,6 +55,8 @@ import app.absentmotion.library.Recovery
 import app.absentmotion.library.RecoveryHandler
 import app.absentmotion.library.RecoveryOffer
 import app.absentmotion.library.ImportFailed
+import app.absentmotion.library.ProjectLinkImportFailure
+import app.absentmotion.library.stoppableImport
 import app.absentmotion.library.ImportReport
 import app.absentmotion.library.Importer
 import app.absentmotion.library.MediaKeeper
@@ -64,13 +68,14 @@ import app.absentmotion.model.XmlNode
 import app.absentmotion.model.formatFloats
 import app.absentmotion.model.fontNames
 import app.absentmotion.fonts.FontName
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.job
 import app.absentmotion.ui.home.EmbedRequest
 import app.absentmotion.ui.home.TemplateEditor
 import app.absentmotion.model.Scene
 import app.absentmotion.model.withCopiedLayerIds
 import app.absentmotion.model.ShapeCatalog
+import app.absentmotion.ui.editor.effects.AddedEffectDialogs
+import app.absentmotion.ui.editor.effects.AddedEffectImport
 import app.absentmotion.ui.editor.EditorScreen
 import app.absentmotion.ui.export.ExportScreen
 import app.absentmotion.ui.home.HomeScreen
@@ -90,17 +95,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.absentmotion.ui.home.UnsupportedPhone
 import app.absentmotion.ui.home.UpdateAskDialog
 import app.absentmotion.ui.home.UpdateDialog
+import app.absentmotion.ui.home.UpdateService
+import app.absentmotion.ui.home.Updater
 import app.absentmotion.ui.home.Updates
 import app.absentmotion.ui.home.autoBackupIfDue
 import app.absentmotion.ui.home.VersionHistory
 import app.absentmotion.ui.theme.PressIndication
 import app.absentmotion.ui.theme.enterFade
+import app.absentmotion.ui.tutorial.Tutorial
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
@@ -111,6 +119,7 @@ import java.io.File
 import app.absentmotion.ui.editor.MediaPicks
 import app.absentmotion.ui.theme.Am
 import app.absentmotion.ui.theme.enterZoom
+import app.absentmotion.ui.home.DialogPill
 
 class MainActivity : ComponentActivity() {
     private val visualPicker = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -118,10 +127,15 @@ class MainActivity : ComponentActivity() {
     }
     private val filePicker = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments()) { MediaPicks.addPictures(it) }
     private val soundPicker = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments()) { MediaPicks.addSounds(it) }
+    private val treePicker = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) app.absentmotion.platform.LinkedMediaTrees.picked(applicationContext, uri)
+    }
     internal lateinit var store: ProjectStore
     internal lateinit var settings: AppSettings
     private lateinit var templates: TemplateStore
     internal val engine by lazy { EngineThread(background = Am.PreviewBg.toArgb(), context = applicationContext) { settings.openGl } }
+    private val addedEffects by lazy { AddedEffectImport(applicationContext) { engine } }
+    private var addedEffectsOnHome by mutableStateOf(false)
     internal var editor by mutableStateOf<EditorState?>(null)
     private var crashSaver: RecoveryHandler? = null
         private set
@@ -129,9 +143,13 @@ class MainActivity : ComponentActivity() {
     private var cameFromEditor = false
     private var exportingFromList by mutableStateOf<Scene?>(null)
     private var imported by mutableStateOf<List<ImportReport>>(emptyList())
+    private var sharedMedia by mutableStateOf<List<SharedMedia>>(emptyList())
     private var editingTemplate by mutableStateOf<String?>(null)
     private var firstRun by mutableStateOf<FirstRun?>(null)
     private var whatsNew by mutableStateOf<app.absentmotion.ui.home.WhatsNew?>(null)
+    private var chooseLinkApp by mutableStateOf<java.net.URI?>(null)
+    private var openAlightJob: kotlinx.coroutines.Job? = null
+    private var projectLinkInput by mutableStateOf<String?>(null)
     private var opening by mutableStateOf(false)
     private var openingProject by mutableStateOf(false)
     private var openFailed by mutableStateOf<String?>(null)
@@ -220,6 +238,8 @@ class MainActivity : ComponentActivity() {
             { filePicker.launch(arrayOf("image/*", "video/*", "audio/*")) },
             { soundPicker.launch(arrayOf("audio/*", "application/ogg", "application/x-flac")) },
         ) { editor?.projectId }
+        app.absentmotion.platform.LinkedMediaTrees.install(this, applicationContext) { treePicker.launch(null) }
+        app.absentmotion.media.MediaLibrarySource.linkedMedia = app.absentmotion.platform.LinkedMediaTrees::listVisual
         lifecycleScope.launch {
             androidx.compose.runtime.snapshotFlow { editor }.collectLatest { state ->
                 if (state == null) return@collectLatest
@@ -231,15 +251,19 @@ class MainActivity : ComponentActivity() {
         }
         watchMemory()
         TestHooks.start(this)
+        app.absentmotion.ui.home.DeviceSend.importer = { file -> importProjectFiles(listOf(Uri.fromFile(file)), quiet = true) }
+        app.absentmotion.ui.home.DeviceSend.opener = ::open
+        app.absentmotion.ui.home.DeviceSend.changed = { projectsChanged++ }
         lifecycleScope.launch { androidx.compose.runtime.snapshotFlow { settings.openGl }.drop(1).collect { engine.restart() } }
         engine.fonts?.let { fonts -> lifecycleScope.launch { fonts.revision.collect { settings.uiFont?.takeIf { FontName.parse(it).source == "imported" && fonts.localFile(it) == null }?.let { settings.uiFont = null } } } }
-        app.absentmotion.ui.home.Updater.calm = ::updateCalm
-        app.absentmotion.ui.home.Updater.atLaunch(applicationContext)
+        Updater.calm = ::updateCalm
+        Updater.atLaunch(applicationContext, open = intent.action == UpdateService.OpenUpdate)
         lifecycleScope.launch { engineWorks() }
         firstRun = FirstRun.of(settings, TestHooks.onboarding(intent).takeIf { savedInstanceState == null })
         whatsNew = app.absentmotion.ui.home.WhatsNewNotes.pending(this, settings)
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Am.HomeBg.toArgb()))
         importShared()
+        receiveAlightLink(intent)
         setContent {
             app.absentmotion.ui.theme.ThemeFadeHost { app.absentmotion.ui.theme.UiFontHost(settings) {
             app.absentmotion.ui.theme.FollowSystemTheme(settings)
@@ -276,9 +300,10 @@ class MainActivity : ComponentActivity() {
                         CompositionLocalProvider(LocalWide provides tabletEditor(config.smallestScreenWidthDp, config.screenWidthDp), LocalTablet provides isTablet(config.smallestScreenWidthDp)) {
                             HomeScreen(
                                 store, settings, onOpen = ::open, onExport = ::exportFromList,
-                                imported = imported, onImportShown = { imported = emptyList() }, onImportFile = { importUris(listOf(it)) },
+                                imported = if (projectLinkInput == null) imported else emptyList(), onImportShown = { imported = emptyList() }, onImportFile = { importUris(listOf(it)) },
                                 onTemplate = { id -> if (!opening && !openingProject) { openingProject = true; openJob = lifecycleScope.launch { try { if (engineWorks()) editingTemplate = id } finally { openingProject = false } } } }, onTemplateProject = ::projectFromTemplate,
                                 onHistory = { historyFor = Triple(it.id, it.title, it.damaged) }, onCollect = ::collectMedia, changes = projectsChanged, engine = { engine },
+                                onImportLink = { if (!opening && !openingProject) projectLinkInput = "" },
                             )
                         }
                         editingTemplate?.let { id ->
@@ -295,14 +320,37 @@ class MainActivity : ComponentActivity() {
                         else {
                             val screen = LocalConfiguration.current
                             CompositionLocalProvider(LocalWide provides tabletEditor(screen.smallestScreenWidthDp, screen.screenWidthDp), LocalTablet provides isTablet(screen.smallestScreenWidthDp), app.absentmotion.ui.editor.panels.LocalVibration provides settings.vibration, LocalDensity provides dense) {
-                                key(open) { Ltr { app.absentmotion.platform.DeskTyping.Track { EditorScreen(open, onExit = ::closeEditor) } } }
+                                key(open) { Ltr { app.absentmotion.platform.DeskTyping.Track { CompositionLocalProvider(app.absentmotion.ui.home.LocalImportLink provides { if (!opening && !openingProject) projectLinkInput = "" }) { EditorScreen(open, onExit = ::closeEditor) } } } }
                             }
                         }
                         if (open.exportOpen) ExportScreen(open.project, open.exportFrame, engine, settings, fromProjectList = false, outdated) { open.exportOpen = false }
                     }
                 }
+                if ((opening || openingProject) && !addedEffects.handlingProject) OpeningOverlay { openJob?.cancel() }
+                AddedEffectDialogs(addedEffects, showImport = first == null && (!addedEffectsOnHome || open == null))
+                chooseLinkApp?.let { link ->
+                    AlertDialog(
+                        onDismissRequest = { chooseLinkApp = null },
+                        title = { Text(stringResource(R.string.project_link_open_with), color = Am.Navy) },
+                        text = {
+                            androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                                DialogPill(applicationInfo.loadLabel(packageManager).toString(), Modifier.fillMaxWidth()) { chooseLinkApp = null; projectLinkInput = link.toString() }
+                                DialogPill("Alight Motion", Modifier.fillMaxWidth()) { chooseLinkApp = null; openInAlight(link) }
+                            }
+                        },
+                        confirmButton = { DialogPill(stringResource(R.string.cancel), primary = false) { chooseLinkApp = null } },
+                        containerColor = Am.Card,
+                    )
+                }
+                projectLinkInput?.let { input ->
+                    androidx.compose.runtime.key(input) {
+                        app.absentmotion.ui.home.ProjectLinkDialog({ projectLinkInput = null }, input) { uri, alightShare ->
+                            importProjectFiles(listOf(uri), asProjects = alightShare, fromLink = true)
+                        }
+                    }
+                }
                 app.absentmotion.ui.home.MobileDataDialog()
-                if (opening || openingProject) OpeningOverlay { openJob?.cancel() }
+                app.absentmotion.ui.home.DeviceSendHost()
                 engineProblem?.takeIf { problemShown }?.let { UnsupportedPhone(it) { problemShown = false } }
                 openFailed?.let { id -> OpenFailedDialog({ openFailed = null; historyFor = Triple(id, "", false) }, outdated) { openFailed = null } }
                 importFailed?.let { reason ->
@@ -314,7 +362,7 @@ class MainActivity : ComponentActivity() {
                                 OutdatedHint(outdated, Modifier.padding(top = 8.dp))
                             }
                         },
-                        confirmButton = { TextButton({ importFailed = null }) { Text(stringResource(R.string.ok), color = Am.Navy) } },
+                        confirmButton = { DialogPill(stringResource(R.string.ok)) { importFailed = null } },
                         containerColor = Am.Card,
                     )
                 }
@@ -323,16 +371,16 @@ class MainActivity : ComponentActivity() {
                         onDismissRequest = { declineFonts(state) },
                         title = { Text(stringResource(R.string.fonts_missing_title)) },
                         text = { Text(stringResource(R.string.fonts_missing_body, names.joinToString(", ") { FontName.parse(it).label })) },
-                        confirmButton = { TextButton({ downloadFonts(names) }) { Text(stringResource(R.string.update_download), color = Am.Accent) } },
-                        dismissButton = { TextButton({ declineFonts(state) }) { Text(stringResource(R.string.update_not_now), color = Am.Accent) } },
+                        confirmButton = { DialogPill(stringResource(R.string.update_download)) { downloadFonts(names) } },
+                        dismissButton = { DialogPill(stringResource(R.string.update_not_now), primary = false, editor = true) { declineFonts(state) } },
                         containerColor = Am.Field, titleContentColor = Am.OnDark, textContentColor = Am.OnDark,
                     )
                 }
                 if (saveFailed && open != null) AlertDialog(
                     onDismissRequest = { saveFailed = false },
                     text = { Text(stringResource(R.string.home_close_save_failed)) },
-                    confirmButton = { TextButton({ saveFailed = false; closeEditor() }) { Text(stringResource(R.string.home_save_failed_retry), color = Am.Accent) } },
-                    dismissButton = { TextButton({ saveFailed = false; closeAnyway = true; closeEditor() }) { Text(stringResource(R.string.home_save_failed_leave), color = Am.Accent) } },
+                    confirmButton = { DialogPill(stringResource(R.string.home_save_failed_retry)) { saveFailed = false; closeEditor() } },
+                    dismissButton = { DialogPill(stringResource(R.string.home_save_failed_leave), primary = false, editor = true) { saveFailed = false; closeAnyway = true; closeEditor() } },
                     containerColor = Am.Field, textContentColor = Am.OnDark,
                 )
                 if (open?.historyOpen == true) VersionHistory(store, open.projectId, open.project.title, engine, onRestore = { restoreVersion(open.projectId, it) }, editor = true) { open.historyOpen = false }
@@ -340,7 +388,9 @@ class MainActivity : ComponentActivity() {
                     VersionHistory(store, id, title, engine, onRestore = { restoreVersion(id, it) }, onDelete = if (damaged) { { deleteDamaged(id) } } else null) { historyFor = null }
                 }
                 val offer = recovered
-                if (problemShown) Unit
+                val homeFree = open == null && first == null && !opening && editingTemplate == null && exportingFromList == null && app.absentmotion.ui.export.PresetSharing.preset == null && offer == null && crashed == null && !problemShown && imported.isEmpty() && whatsNew == null && !app.absentmotion.ui.home.FfampOffer.pending(settings)
+                if (Updater.fromNotification && !Updater.hidden && Updater.busy) UpdateDialog()
+                else if (problemShown) Unit
                 else if (open == null && !opening && (offer != null || crashed != null)) ClosedDialog(
                     crashed, offer?.title, outdated,
                     onRestore = { seenCrash(outdated != null); offer?.let { answerRecovery(it, true) } },
@@ -350,11 +400,15 @@ class MainActivity : ComponentActivity() {
                     val notes = whatsNew
                     if (notes != null) app.absentmotion.ui.home.WhatsNewDialog(notes) { whatsNew = null; app.absentmotion.ui.home.WhatsNewNotes.seen(this, settings) }
                     else if (app.absentmotion.ui.home.FfampOffer.pending(settings)) app.absentmotion.ui.home.FfampOfferDialog(settings)
-                    else if (settings.updatesAsked) UpdateDialog() else UpdateAskDialog(settings)
+                    else if (homeFree && !openingProject && openFailed == null && importFailed == null && historyFor == null && sharedMedia.isNotEmpty()) {
+                        if (Tutorial.running || Tutorial.offerDismissed || settings.tutorialAsk != Tutorial.ASK) {
+                            SharedMediaDialog(sharedMedia, store, projectsChanged, { openShared(null) }, ::openShared) { sharedMedia = emptyList() }
+                        }
+                    } else if (settings.updatesAsked) UpdateDialog() else UpdateAskDialog(settings)
                 }
                 app.absentmotion.ui.tutorial.TutorialHost(
                     open, store, settings,
-                    homeFree = open == null && first == null && !opening && editingTemplate == null && exportingFromList == null && app.absentmotion.ui.export.PresetSharing.preset == null && offer == null && crashed == null && !problemShown && imported.isEmpty() && whatsNew == null && !app.absentmotion.ui.home.FfampOffer.pending(settings),
+                    homeFree = homeFree,
                     onOpen = ::open, onCloseEditor = ::closeEditor, onChanged = { projectsChanged++ },
                 )
             }
@@ -366,21 +420,115 @@ class MainActivity : ComponentActivity() {
 
 
 
-    private fun updateCalm() = lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED) && editor == null && !closingEditor && !opening && !openingProject &&
+    private fun updateCalm() = updateVisible() && editor == null && !closingEditor && !opening && !openingProject &&
         editingTemplate == null && exportingFromList == null && app.absentmotion.ui.export.PresetSharing.preset == null && firstRun == null && recovered == null && crashed == null && !problemShown && whatsNew == null && !app.absentmotion.ui.home.FfampOffer.pending(settings) &&
         settings.updatesAsked && !app.absentmotion.export.ExportRun.running
 
-    private fun importShared() {
-        val uris = ImportHandOff.take().map(Uri::parse)
-        if (uris.isNotEmpty()) importUris(uris)
+    private fun updateVisible() = lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)
+
+    private fun receiveAlightLink(intent: Intent) {
+        val text = when (intent.action) {
+            Intent.ACTION_VIEW -> intent.dataString
+            Intent.ACTION_SEND -> runCatching { intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString() }.getOrNull()
+            else -> null
+        } ?: return
+        val link = app.absentmotion.library.externalAlightLink(text) ?: return
+        openAlightJob?.cancel()
+        val offerChoice = intent.action == Intent.ACTION_VIEW &&
+            runCatching { packageManager.getApplicationInfo(AlightPackage, 0).enabled }.getOrDefault(false)
+        if (offerChoice) {
+            projectLinkInput = null
+            chooseLinkApp = link
+        } else {
+            chooseLinkApp = null
+            projectLinkInput = link.toString()
+        }
     }
 
-    private fun importUris(uris: List<Uri>) {
+    private fun openInAlight(link: java.net.URI) {
+        openAlightJob = lifecycleScope.launch {
+            val http = app.absentmotion.library.projectFileHttp(link)
+            try {
+                val share = kotlinx.coroutines.runInterruptible(Dispatchers.IO) {
+                    app.absentmotion.library.resolveAlightPage(link, http)
+                }
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(share.toString())).setPackage(AlightPackage))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: app.absentmotion.platform.MobileDataRefused) {
+                importFailed = getString(R.string.mobile_data_refused)
+            } catch (_: Exception) {
+                importFailed = getString(R.string.project_link_alight)
+            } finally {
+                http.abort()
+            }
+        }
+    }
+
+    private fun importShared() {
+        val uris = ImportHandOff.take().map(Uri::parse)
+        if (uris.isEmpty()) return
+        val target = editor?.takeUnless { closingEditor }
         lifecycleScope.launch {
+            val (effects, remaining) = withContext(Dispatchers.IO) {
+                uris.map { uri -> uri to readAddedEffectUri(applicationContext, uri) }.partition { it.second != null }
+            }
+            if (effects.isNotEmpty()) {
+                if (editor != null) {
+                    addedEffectsOnHome = true
+                    closeEditor()
+                }
+                addedEffects.present(effects.mapNotNull { it.second })
+            }
+            val classified = withContext(Dispatchers.IO) { remaining.map { (uri, _) -> uri to readSharedMedia(uri) } }
+            val projects = classified.filter { it.second == null }.map { it.first }
+            if (projects.isNotEmpty()) importUris(projects, classifyEffects = false)
+            val media = classified.mapNotNull { it.second }
+            if (media.isEmpty()) return@launch
+            if (target != null && editor === target && !closingEditor) queueSharedMedia(target.projectId, media)
+            else sharedMedia += media
+        }
+    }
+
+    private fun openShared(id: String?) {
+        val media = sharedMedia
+        if (media.isEmpty() || editor != null || opening || openingProject) return
+        openingProject = true
+        openJob = lifecycleScope.launch {
+            try {
+                val project = id ?: try { createSharedProject(applicationContext, store, settings, media) }
+                catch (e: CancellationException) { throw e }
+                catch (e: Exception) { Log.w("AMImport", "cannot create a project from shared media", e); null }
+                if (project == null) {
+                    Toast.makeText(this@MainActivity, getString(R.string.home_create_project_failed), Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                val state = openNow(project) ?: return@launch
+                sharedMedia = sharedMedia.drop(media.size)
+                queueSharedMedia(state.projectId, media)
+            } finally { openingProject = false }
+        }
+    }
+
+    private fun importUris(uris: List<Uri>, classifyEffects: Boolean = true) {
+        lifecycleScope.launch {
+            val projects = if (classifyEffects) {
+                val (effects, remaining) = withContext(Dispatchers.IO) {
+                    uris.map { uri -> uri to readAddedEffectUri(applicationContext, uri) }.partition { it.second != null }
+                }
+                addedEffects.present(effects.mapNotNull { it.second })
+                remaining.map { it.first }
+            } else uris
+            if (projects.isNotEmpty()) importProjectFiles(projects)
+        }
+    }
+
+    private suspend fun importProjectFiles(uris: List<Uri>, asProjects: Boolean = false, fromLink: Boolean = false, quiet: Boolean = false): List<ImportReport> =
+        kotlinx.coroutines.coroutineScope {
             val reports = ArrayList<ImportReport>()
             var failure: String? = null
             var presetsAdded = 0
-            val overlay = !opening
+            val overlay = !opening && !quiet
             if (overlay) { opening = true; openJob = coroutineContext.job }
             try {
                 CrashLogs.during("importing") { withContext(Dispatchers.IO) {
@@ -388,10 +536,12 @@ class MainActivity : ComponentActivity() {
                     val importer = Importer.forApp(applicationContext, store)
                     val presets = app.absentmotion.library.PresetStore(applicationContext)
                     for (uri in uris) try {
-                        reports += importer.import { contentResolver.openInputStream(uri)?.let { stoppable(it, job) } }.mapNotNull {
+                        val items = importer.import { contentResolver.openInputStream(uri)?.stoppableImport(job) }
+                        withContext(Dispatchers.Main) { addedEffects.confirmImported(items, store) }
+                        reports += items.map { it.copy(bundledEffects = emptyMap()) }.mapNotNull {
                             afterImport()
                             if (it.community?.preset == true && presets.adopt(store, it.id, templates::localize) != null) null.also { presetsAdded++ }
-                            else if (!it.template) it else templates.adopt(store, it.id, engine)?.let { id -> it.copy(id = id) } ?: it.copy(template = false)
+                            else if (!it.template) it else if (asProjects) it.copy(template = false) else templates.adopt(store, it.id, engine)?.let { id -> it.copy(id = id) } ?: it.copy(template = false)
                         }
                     } catch (e: kotlinx.coroutines.CancellationException) {
                         throw e
@@ -407,28 +557,24 @@ class MainActivity : ComponentActivity() {
                 if (overlay) opening = false
                 projectsChanged++
             }
-            failure?.let { importFailed = it }
+            if (!fromLink && !quiet) failure?.let { importFailed = it }
             if (presetsAdded > 0) Toast.makeText(this@MainActivity, getString(R.string.community_added_preset), Toast.LENGTH_SHORT).show()
-            if (reports.isNotEmpty()) imported = reports
+            if (reports.isNotEmpty() && !quiet) imported = if (fromLink) imported + reports else reports
             var drawn = false
             for (report in reports) if (!report.template) {
-                val scene = withContext(Dispatchers.IO) { store.load(report.id) } ?: continue
+                val scene = withContext(Dispatchers.IO) { store.load(report.id)?.also { engine.fonts?.fetchMissing(it) } } ?: continue
                 drawn = saveThumbnail(scene, scene.totalTime / 2, report.id) || drawn
             }
             if (drawn) projectsChanged++
+            if (fromLink || quiet) failure?.let { throw ProjectLinkImportFailure(it) }
+            reports
         }
-    }
-
-    private fun stoppable(input: java.io.InputStream, job: kotlinx.coroutines.Job) = object : java.io.FilterInputStream(input) {
-        override fun read(): Int { job.ensureActive(); return super.read() }
-        override fun read(b: ByteArray, off: Int, len: Int): Int { job.ensureActive(); return super.read(b, off, len) }
-    }
 
     private fun offerFonts(state: EditorState) {
         val library = engine.fonts ?: return
         if (state.projectId in fontsDeclined) return
         lifecycleScope.launch {
-            val missing = withContext(Dispatchers.IO) { state.project.fontNames().filter { FontName.parse(it).source == "googlefonts" && library.localFile(it) == null } }
+            val missing = withContext(Dispatchers.IO) { library.fetchMissing(state.project) }
             if (missing.isNotEmpty() && editor === state) fontOffer = state to missing
         }
     }
@@ -548,6 +694,7 @@ class MainActivity : ComponentActivity() {
     internal suspend fun openNow(id: String): EditorState? {
         if (!engineWorks()) return null
         val scene = loadInBackground(id) ?: return null
+        addedEffects.confirmMissing(scene, id)
         cameFromEditor = true
         val saver = ProjectSaver(id, store, recovery, failed = { runOnUiThread { Toast.makeText(this, getString(R.string.home_save_project_failed), Toast.LENGTH_LONG).show() } })
         return EditorState(id, scene, store, engine, settings, saver).also { editor = it; offerFonts(it) }
@@ -658,6 +805,7 @@ class MainActivity : ComponentActivity() {
             MultiSelect.clear()
             if (editor === closing) editor = null
             closingEditor = false
+            addedEffectsOnHome = false
             val id = closing.projectId
             val thumbnail = store.thumbnailFile(id)
             val temp = java.io.File(thumbnail.parentFile, thumbnail.name + ".tmp")
@@ -680,7 +828,7 @@ class MainActivity : ComponentActivity() {
     @android.annotation.SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
         val state = editor
-        if (state != null && event.action == android.view.KeyEvent.ACTION_DOWN && app.absentmotion.platform.DeskKeys.handle(state, androidx.compose.ui.input.key.KeyEvent(event), ::closeEditor)) return true
+        if (state != null && (event.action == android.view.KeyEvent.ACTION_DOWN || event.action == android.view.KeyEvent.ACTION_UP) && app.absentmotion.platform.DeskKeys.handle(state, androidx.compose.ui.input.key.KeyEvent(event), ::closeEditor)) return true
         return super.dispatchKeyEvent(event)
     }
 
@@ -697,11 +845,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.action == UpdateService.OpenUpdate) Updater.atLaunch(applicationContext, open = true)
         if (BuildConfig.DEBUG && intent.hasExtra("desklayout")) {
             app.absentmotion.platform.DeskDetect.forced = intent.getBooleanExtra("desklayout", false)
             app.absentmotion.platform.DeskDetect.refresh(this)
         }
         importShared()
+        receiveAlightLink(intent)
         TestHooks.newIntent(this, intent)
     }
 
@@ -731,8 +881,9 @@ class MainActivity : ComponentActivity() {
         if (app.absentmotion.editor.ElementNav.open === elementNav) app.absentmotion.editor.ElementNav.open = null
         elementNav = null
         MediaPicks.release(this)
+        app.absentmotion.platform.LinkedMediaTrees.release(this)
         crashSaver?.current = { null }
-        if (app.absentmotion.ui.home.Updater.calm == ::updateCalm) app.absentmotion.ui.home.Updater.calm = { false }
+        if (Updater.calm == ::updateCalm) Updater.calm = { false }
         app.absentmotion.export.ExportEngine.release(engine)
     }
 
@@ -775,13 +926,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        app.absentmotion.ui.home.Updater.resumed(this)
+        Updater.resumed(this)
         androidx.core.app.NotificationManagerCompat.from(this).cancel(app.absentmotion.ui.home.UPDATED_NOTIFICATION_ID)
         engine.refreshMedia()
         lifecycleScope.launch { recheckVideoThumbnails(applicationContext) }
     }
 
     private companion object {
+        const val AlightPackage = "com.alightcreative.motion"
         const val OPEN_PROJECT = "openProject"
         const val OPEN_FRAME = "openFrame"
         const val OPEN_LAYER = "openLayer"
