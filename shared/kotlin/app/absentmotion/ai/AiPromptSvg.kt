@@ -2,41 +2,42 @@ package app.absentmotion.ai
 
 /** Pedoman menggambar dengan SVG, prinsip animasi, dan contoh lengkap. Ditambahkan ke prompt sistem. */
 object AiPromptSvg {
-    val bagian: String = """MENGGAMBAR DENGAN SVG:
-- tambah_svg {svg, nama?, awal?, durasi?, bongkar?}: mengimpor kode SVG
-  menjadi layer vektor. Pakai ini untuk gambar yang butuh bentuk bebas:
-  karakter, hewan, kendaraan, ikon, pemandangan. Jangan menyusun gambar
-  dari puluhan bentuk dasar.
-- bongkar (bawaan true): grup hasil impor langsung dibongkar, sehingga
-  tiap elemen SVG menjadi layer sendiri dengan nama yang sama seperti id
-  elemennya. Id angka layer muncul di HASIL PUTARAN berikutnya; pakai id
-  itu untuk animasi di putaran berikutnya.
-- Aturan SVG:
-  1. Pakai tanda kutip tunggal di dalam SVG supaya JSON tetap valid, dan
-     tulis seluruh SVG dalam satu baris.
-  2. Tulis viewBox='0 0 W H' dan JANGAN menulis width atau height.
-  3. Hanya path, rect, circle, ellipse, line, polyline, polygon, serta
-     linearGradient dan radialGradient di defs. Tanpa teks, gambar,
-     filter, mask, clipPath, pattern, atau CSS. Teks dibuat dengan
-     tambah_layer teks.
-  4. Beri id pada TIAP elemen yang harus bergerak sendiri (id menjadi
-     nama layer). Satu elemen = satu layer; jangan membungkus elemen
-     yang akan digerakkan di dalam g.
-  5. Elemen pertama berada paling bawah. Urutkan dari latar ke depan.
-  6. Maksimal sekitar 40 elemen. Pakai bentuk organik (rx, lengkung) dan
-     gradasi supaya tidak kaku.
-- Pemetaan ke kanvas: gambar diskalakan s = min(0.8 x lebar / W,
-  0.8 x tinggi / H) lalu dipusatkan. Titik SVG (x, y) jatuh di
-  (lebar/2 + (x - W/2) x s, tinggi/2 + (y - H/2) x s).
-- atur_sendi {id, x, y, ruang: "svg"|"kanvas"}: memasang titik putar
-  layer di sendi TANPA menggeser gambar. WAJIB dipakai sebelum memberi
-  keyframe rotasi pada anggota badan, ekor, pintu, jarum jam, dan
-  sejenisnya. Tulis koordinat sendi dalam ruang "svg" (koordinat di SVG
-  yang kamu tulis sendiri). Setelah atur_sendi, posisi_x dan posisi_y
-  layer menjadi koordinat sendi itu.
-- Jangan mengubah poros_x atau poros_y langsung untuk memutar dari
-  sendi: poros menggeser gambar karena titik poros ditempatkan di posisi
-  layer. Pakai atur_sendi.
+    val bagian: String = """MENGGAMBAR (SVG):
+- gambar_svg {nama, deskripsi, bagian?, gaya?, palet?, rasio?, awal?, durasi?, dasar?, revisi?}:
+  meminta ILUSTRATOR khusus menggambar. Ini cara UTAMA untuk karakter,
+  hewan, kendaraan, ikon, latar, dan pemandangan. Jangan menyusun gambar
+  dari bentuk dasar atau menulis SVG sendiri kecuali gambarnya sangat
+  sederhana.
+  - deskripsi: tulis kaya: subjek, pose, ekspresi, warna, suasana, detail.
+  - bagian: daftar id elemen yang harus terpisah agar bisa dianimasikan,
+    misalnya ["kepala", "lengan_kiri", "lengan_kanan", "kaki_kiri", "kaki_kanan"].
+  - gaya (bawaan: kartun vektor bersih dengan bayangan dan kilau halus),
+    palet (daftar hex, boleh kosong), rasio: 1:1, 3:4, 4:3, 16:9, 9:16, 1:2, 2:1.
+  - Revisi: lihat tangkapan frame. Jika gambar kurang bagus, panggil
+    gambar_svg lagi dengan nama dan dasar yang SAMA, dan isi revisi dengan
+    catatan konkret (misalnya "kepala terlalu kecil, tambah bayangan di
+    bawah dagu, warna kaus lebih cerah"). Gambar lama diganti. Maksimal 2
+    revisi. Selesaikan gambar SEBELUM menganimasikannya, karena keyframe
+    layer lama ikut hilang.
+- Hasil gambar_svg dibongkar menjadi satu layer per elemen. Hasil putaran
+  menyebut tiap layer dengan id angka dan KOTAK-nya di kanvas (x awal-akhir,
+  y awal-akhir). Pakai id dan kotak itu untuk menganimasikan.
+- atur_sendi {id, sendi, geser_x?, geser_y?}: memasang titik putar layer di
+  tepi kotaknya TANPA menggeser gambar. sendi: atas, bawah, kiri, kanan,
+  tengah, kiri_atas, kanan_atas, kiri_bawah, kanan_bawah. geser_x dan
+  geser_y (piksel) menggeser sendi ke dalam bagian. WAJIB dipakai sebelum
+  keyframe rotasi anggota badan, ekor, pintu, jarum jam, dan sejenisnya:
+  lengan dan kaki = atas, ekor = sisi yang menempel badan.
+  Bentuk lain: atur_sendi {id, x, y, ruang: "kanvas"|"svg"}. Setelah
+  atur_sendi, posisi_x dan posisi_y layer menjadi koordinat sendi itu.
+- Jangan mengubah poros_x atau poros_y langsung untuk memutar dari sendi:
+  poros menggeser gambar. Pakai atur_sendi.
+- tambah_svg {svg, nama?, awal?, durasi?, bongkar?}: untuk SVG yang kamu
+  tulis sendiri (sederhana). Aturan: kutip tunggal di dalam SVG dan satu
+  baris; viewBox='0 0 W H' tanpa width atau height; id pada tiap elemen
+  yang bergerak. Batas pengimpor: gradasi hanya 2 warna (linear atau
+  radial), garis tepi hanya satu warna tanpa putus-putus, tanpa teks,
+  gambar, filter, mask, clipPath, atau pattern; maksimal 1000 bentuk.
 - Waktu keyframe adalah waktu proyek dalam milidetik (bukan relatif
   terhadap awal layer).
 
@@ -60,27 +61,26 @@ PRINSIP ANIMASI:
   berdiri.
 
 URUTAN KERJA YANG BAIK (kamu punya beberapa putaran):
-1. Putaran pertama: bangun adegan statis (latar, objek, teks).
-2. Putaran berikutnya: beri gerak (atur_sendi, keyframe, perulangan).
-3. Putaran terakhir (poles): lihat tangkapan frame terbaru, nilai kualitas
+1. Putaran pertama: gambar adegan statis (gambar_svg untuk objek dan latar, tambah_layer untuk teks).
+2. Periksa tangkapan frame. Jika gambar kurang bagus, revisi (maksimal 2 kali).
+3. Putaran berikutnya: beri gerak (atur_sendi, keyframe, perulangan).
+4. Putaran terakhir (poles): lihat tangkapan frame terbaru, nilai kualitas
    visual dan geraknya dengan jujur (proporsi, warna, komposisi, timing,
    easing), lalu perbaiki paling banyak 3 hal yang paling mengganggu
    sebelum membalas selesai.
 
 CONTOH 1, karakter berjalan di tempat (dua putaran).
 Putaran 1:
-{"rencana": "Gambar karakter dengan SVG: kepala, badan, dua lengan, dua kaki, dan bayangan. Tiap bagian yang bergerak diberi id sendiri.", "pesan": "Menggambar karakter", "aksi": [
-  {"aksi": "tambah_svg", "nama": "Karakter", "awal": 0, "durasi": 4000, "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 800'><ellipse id='bayangan' cx='200' cy='708' rx='95' ry='12' fill='#000000' opacity='0.18'/><rect id='kaki_belakang' x='203' y='400' width='34' height='300' rx='17' fill='#1f2a44'/><rect id='lengan_belakang' x='243' y='240' width='28' height='125' rx='14' fill='#e8b48a'/><rect id='badan' x='160' y='225' width='80' height='185' rx='28' fill='#3b6fd4'/><circle id='kepala' cx='200' cy='165' r='46' fill='#f2c49b'/><rect id='kaki_depan' x='163' y='400' width='34' height='300' rx='17' fill='#2b3a5e'/><rect id='lengan_depan' x='129' y='240' width='28' height='125' rx='14' fill='#f2c49b'/></svg>"}
+{"rencana": "Minta ilustrator menggambar karakter dengan bagian terpisah untuk anggota badan. Rasio 1:2 supaya muat berdiri.", "pesan": "Menggambar karakter", "aksi": [
+  {"aksi": "gambar_svg", "nama": "Karakter", "deskripsi": "Anak laki-laki kartun ramah berdiri tegak menghadap depan, kaus biru, celana biru tua, kulit sawo matang muda, rambut hitam pendek, senyum lebar", "bagian": ["bayangan", "kaki_belakang", "lengan_belakang", "badan", "kepala", "kaki_depan", "lengan_depan"], "rasio": "1:2", "awal": 0, "durasi": 4000}
 ]}
-Hasil putaran 1 yang diterima: ... dibongkar menjadi 7 layer: bayangan
-(id=11), kaki_belakang (id=12), lengan_belakang (id=13), badan (id=14),
-kepala (id=15), kaki_depan (id=16), lengan_depan (id=17).
-Putaran 2 (pakai id dari hasil itu; sendi ditulis dalam koordinat SVG):
-{"rencana": "Pasang titik putar di pinggul dan bahu, lalu ayunkan kaki dan lengan bergantian setiap 300 ms.", "pesan": "Membuat siklus berjalan", "aksi": [
-  {"aksi": "atur_sendi", "id": 16, "x": 180, "y": 410, "ruang": "svg"},
-  {"aksi": "atur_sendi", "id": 12, "x": 220, "y": 410, "ruang": "svg"},
-  {"aksi": "atur_sendi", "id": 17, "x": 143, "y": 252, "ruang": "svg"},
-  {"aksi": "atur_sendi", "id": 13, "x": 257, "y": 252, "ruang": "svg"},
+Hasil putaran 1 yang diterima: ... dibongkar menjadi 7 layer: bayangan (id=11, kotak x 357-722, y 1528-1574), kaki_belakang (id=12, kotak x 545-611, y 960-1536), lengan_belakang (id=13, kotak x 622-676, y 652-892), badan (id=14, kotak x 463-616, y 624-979), kepala (id=15, kotak x 451-628, y 420-597), kaki_depan (id=16, kotak x 468-534, y 960-1536), lengan_depan (id=17, kotak x 403-457, y 652-892).
+Putaran 2 (pakai id dan kotak dari hasil itu):
+{"rencana": "Pasang titik putar di pinggul dan bahu memakai kotak layer, lalu ayunkan kaki dan lengan bergantian setiap 300 ms.", "pesan": "Membuat siklus berjalan", "aksi": [
+  {"aksi": "atur_sendi", "id": 16, "sendi": "atas", "geser_y": 20},
+  {"aksi": "atur_sendi", "id": 12, "sendi": "atas", "geser_y": 20},
+  {"aksi": "atur_sendi", "id": 17, "sendi": "atas", "geser_y": 14},
+  {"aksi": "atur_sendi", "id": 13, "sendi": "atas", "geser_y": 14},
   {"aksi": "ulangi", "jumlah": 14, "isi": [
     {"aksi": "keyframe", "id": 16, "properti": "rotasi", "waktu": "=k*300", "nilai": "=26*(1-2*mod(k,2))", "easing": "cubicBezier"},
     {"aksi": "keyframe", "id": 12, "properti": "rotasi", "waktu": "=k*300", "nilai": "=-26*(1-2*mod(k,2))", "easing": "cubicBezier"},
